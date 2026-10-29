@@ -123,10 +123,16 @@ class PasskeyManager:
             credential_type = verified_registration.credential_type,
             user_verified = verified_registration.user_verified,
             attestation_format = verified_registration.fmt,
-            credential_device_type = verified_registration.credential_device_type,
+            credential_device_type = str(verified_registration.credential_device_type),
             credential_backed_up = verified_registration.credential_backed_up,
-            backup_eligible = (
-                verified_registration.credential_backup_eligible
+            backup_eligible = getattr(
+                verified_registration,
+                "credential_backup_eligible",
+                getattr(
+                    verified_registration,
+                    "backup_eligible",
+                    verified_registration.credential_backed_up,
+                ),
             ),
             backup_state = verified_registration.credential_backed_up,
         )
@@ -205,7 +211,15 @@ class PasskeyManager:
             credential_id = verified_authentication.credential_id,
             user_verified = verified_authentication.user_verified,
             backup_state = verified_authentication.credential_backed_up,
-            backup_eligible = verified_authentication.credential_backup_eligible,
+            backup_eligible = getattr(
+                verified_authentication,
+                "credential_backup_eligible",
+                getattr(
+                    verified_authentication,
+                    "backup_eligible",
+                    verified_authentication.credential_backed_up,
+                ),
+            ),
         )
 
 
