@@ -10,80 +10,6 @@ permissions:
   contents: read
 
 jobs:
-  backend-audit:
-    name: Backend Cryptographic & Security Audits
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_DB: chat_auth
-          POSTGRES_USER: chat_user
-          POSTGRES_PASSWORD: change-this-password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
-      redis:
-        image: redis:8-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
-      surrealdb:
-        image: surrealdb/surrealdb:v3.0.5
-        ports:
-          - 8000:8000
-        options: >-
-          --health-cmd "surreal is-ready"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-          cache: "pip"
-
-      - name: Install System Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libpq-dev
-
-      - name: Install Backend Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruff pytest pytest-asyncio httpx websockets cryptography
-          pip install -e backend/.[dev]
-
-      - name: Run Ruff Code Quality & Linter
-        run: |
-          ruff check backend/app/ backend/tests/
-
-      - name: Run Ruff Formatting Check
-        run: |
-          ruff format --check backend/app/ backend/tests/
-
-      - name: Run Pytest Cryptographic & Attack Test Suite
-        env:
-          DATABASE_URL: postgresql+asyncpg://chat_user:change-this-password@localhost:5432/chat_auth
-          REDIS_URL: redis://localhost:6379
-          SURREAL_URL: ws://localhost:8000
-          ENV: test
-        run: |
-          pytest backend/tests -v
-
   frontend-audit:
     name: Frontend Cryptographic & Reactivity Verification
     runs-on: ubuntu-latest
@@ -92,23 +18,65 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.1
+
       - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: "pnpm"
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install Frontend Dependencies
         working-directory: frontend
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: TypeScript Static Typecheck
         working-directory: frontend
-        run: npm run typecheck
+        run: pnpm run typecheck
 
       - name: Run Cryptographic Primitives & Double Ratchet Tests (Vitest)
         working-directory: frontend
-        run: npm test -- --run
+        run: pnpm run test
 
       - name: Production Vite Bundler Verification
         working-directory: frontend
-        run: npm run build
+        run: pnpm run build
+
+  backend-audit:
+    name: Backend Cryptographic & Security Audits
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Create Environment Config
+        run: |
+          cp .env.example .env
+
+      - name: Build and Start CryptLink Microservices Stack
+        run: |
+          docker compose -f dev.compose.yml up -d --build
+          sleep 10
+          docker compose -f dev.compose.yml ps
+
+      - name: Run Ruff Code Quality & Static Security Analysis
+        run: |
+          docker compose -f dev.compose.yml exec -T backend ruff check /app/app /app/tests
+
+      - name: Run Ruff Formatting Verification
+        run: |
+          docker compose -f dev.compose.yml exec -T backend ruff format --check /app/app /app/tests
+
+      - name: Run Pytest Cryptographic Protocol & Attack Test Suite
+        run: |
+          docker compose -f dev.compose.yml exec -T backend pytest /app/tests -v
+
+      - name: Clean Teardown
+        if: always()
+        run: |
+          docker compose -f dev.compose.yml down -v

@@ -15,4 +15,4 @@ COPY frontend/ .
 
 EXPOSE 5173
 
-CMD ["pnpm", "run", "dev", "--", "--host", "0.0.0.0"]
+CMD ["sh", "-c", "CI=true pnpm install --force && pnpm run dev -- --host 0.0.0.0"]
