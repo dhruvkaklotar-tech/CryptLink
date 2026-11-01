@@ -6,11 +6,19 @@ const envApiUrl: string | undefined = import.meta.env.VITE_API_URL as string | u
 const envWsUrl: string | undefined = import.meta.env.VITE_WS_URL as string | undefined;
 const envRpId: string | undefined = import.meta.env.VITE_RP_ID as string | undefined;
 
+const isBrowser = typeof window !== "undefined";
+const defaultHost = isBrowser ? window.location.host : "localhost:8000";
+const defaultHostname = isBrowser ? window.location.hostname : "localhost";
+const defaultWsProtocol = isBrowser && window.location.protocol === "https:" ? "wss:" : "ws:";
+const defaultApiUrl = isBrowser ? window.location.origin : "http://localhost:8000";
+const defaultWsUrl = isBrowser ? `${defaultWsProtocol}//${defaultHost}` : "ws://localhost:8000";
+
 export const API_URL =
-  envApiUrl !== undefined && envApiUrl !== "" ? envApiUrl : "http://localhost:8000";
+  envApiUrl !== undefined && envApiUrl !== "" ? envApiUrl : defaultApiUrl;
 export const WS_URL =
-  envWsUrl !== undefined && envWsUrl !== "" ? envWsUrl : "ws://localhost:8000";
-export const RP_ID = envRpId !== undefined && envRpId !== "" ? envRpId : "localhost";
+  envWsUrl !== undefined && envWsUrl !== "" ? envWsUrl : defaultWsUrl;
+export const RP_ID =
+  envRpId !== undefined && envRpId !== "" ? envRpId : defaultHostname;
 
 export const WS_HEARTBEAT_INTERVAL = 30000;
 export const WS_RECONNECT_DELAY = 5000;
