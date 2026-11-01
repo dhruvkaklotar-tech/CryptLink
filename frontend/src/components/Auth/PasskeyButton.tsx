@@ -3,52 +3,47 @@
 // PasskeyButton.tsx
 // ===================
 
-import type { JSX } from 'solid-js'
-import { createSignal, onMount, Show } from 'solid-js'
-import {
-  isPlatformAuthenticatorAvailable,
-  isWebAuthnSupported,
-} from '../../services'
-import { Button } from '../UI/Button'
+import type { JSX } from "solid-js";
+import { createSignal, onMount, Show } from "solid-js";
+import { isPlatformAuthenticatorAvailable, isWebAuthnSupported } from "../../services";
+import { Button } from "../UI/Button";
 
 interface PasskeyButtonProps {
-  mode: 'register' | 'login'
-  onClick: () => void | Promise<void>
-  loading?: boolean
-  disabled?: boolean
-  class?: string
+  mode: "register" | "login";
+  onClick: () => void | Promise<void>;
+  loading?: boolean;
+  disabled?: boolean;
+  class?: string;
 }
 
 export function PasskeyButton(props: PasskeyButtonProps): JSX.Element {
-  const [webAuthnSupported, setWebAuthnSupported] = createSignal(true)
-  const [platformAvailable, setPlatformAvailable] = createSignal(false)
+  const [webAuthnSupported, setWebAuthnSupported] = createSignal(true);
+  const [platformAvailable, setPlatformAvailable] = createSignal(false);
 
   onMount(() => {
-    const supported = isWebAuthnSupported()
-    setWebAuthnSupported(supported)
+    const supported = isWebAuthnSupported();
+    setWebAuthnSupported(supported);
 
     if (supported) {
       void isPlatformAuthenticatorAvailable().then((available) => {
-        setPlatformAvailable(available)
-      })
+        setPlatformAvailable(available);
+      });
     }
-  })
+  });
 
   const buttonText = (): string => {
     if (!webAuthnSupported()) {
-      return 'WEBAUTHN NOT SUPPORTED'
+      return "WEBAUTHN NOT SUPPORTED";
     }
-    return props.mode === 'register'
-      ? 'REGISTER WITH PASSKEY'
-      : 'LOGIN WITH PASSKEY'
-  }
+    return props.mode === "register" ? "REGISTER WITH PASSKEY" : "LOGIN WITH PASSKEY";
+  };
 
   const isDisabled = (): boolean => {
-    return !webAuthnSupported() || (props.disabled ?? false)
-  }
+    return !webAuthnSupported() || (props.disabled ?? false);
+  };
 
   return (
-    <div class={`flex flex-col gap-2 ${props.class ?? ''}`}>
+    <div class={`flex flex-col gap-2 ${props.class ?? ""}`}>
       <Button
         variant="primary"
         size="lg"
@@ -62,29 +57,21 @@ export function PasskeyButton(props: PasskeyButtonProps): JSX.Element {
       </Button>
 
       <Show when={!webAuthnSupported()}>
-        <p class="font-pixel text-[8px] text-error text-center">
+        <p class="font-pixel text-error text-center text-[8px]">
           YOUR BROWSER DOES NOT SUPPORT PASSKEYS
         </p>
       </Show>
 
       <Show when={webAuthnSupported() && platformAvailable()}>
-        <p class="font-pixel text-[8px] text-success text-center">
-          BIOMETRIC AUTH AVAILABLE
-        </p>
+        <p class="font-pixel text-success text-center text-[8px]">BIOMETRIC AUTH AVAILABLE</p>
       </Show>
     </div>
-  )
+  );
 }
 
 function PasskeyIcon(): JSX.Element {
   return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="currentColor"
-      aria-hidden="true"
-    >
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
       <rect x="2" y="6" width="2" height="6" />
       <rect x="4" y="4" width="2" height="2" />
       <rect x="6" y="2" width="4" height="2" />
@@ -95,5 +82,5 @@ function PasskeyIcon(): JSX.Element {
       <rect x="10" y="10" width="2" height="2" />
       <rect x="6" y="12" width="4" height="2" />
     </svg>
-  )
+  );
 }

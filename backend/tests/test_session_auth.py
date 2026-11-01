@@ -38,7 +38,7 @@ class _StubRedis:
         return None
 
 
-@pytest.fixture(autouse = True)
+@pytest.fixture(autouse=True)
 def stub_redis(monkeypatch):
     """
     Replace the real Redis client used by the auth dependency
@@ -53,8 +53,8 @@ async def test_me_requires_session(app: FastAPI) -> None:
     """
     /auth/me returns 401 with no cookie
     """
-    transport = ASGITransport(app = app)
-    async with AsyncClient(transport = transport, base_url = "http://test") as ac:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
         resp = await ac.get("/auth/me")
         assert resp.status_code == 401
 
@@ -64,8 +64,8 @@ async def test_rooms_list_requires_session(app: FastAPI) -> None:
     """
     GET /rooms returns 401 with no cookie
     """
-    transport = ASGITransport(app = app)
-    async with AsyncClient(transport = transport, base_url = "http://test") as ac:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
         resp = await ac.get("/rooms")
         assert resp.status_code == 401
 
@@ -75,11 +75,11 @@ async def test_rooms_create_requires_session(app: FastAPI) -> None:
     """
     POST /rooms returns 401 with no cookie
     """
-    transport = ASGITransport(app = app)
-    async with AsyncClient(transport = transport, base_url = "http://test") as ac:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
         resp = await ac.post(
             "/rooms",
-            json = {
+            json={
                 "participant_id": "00000000-0000-0000-0000-000000000000",
                 "room_type": "direct",
             },
@@ -92,10 +92,10 @@ async def test_search_users_requires_session(app: FastAPI) -> None:
     """
     POST /auth/users/search returns 401 with no cookie
     """
-    transport = ASGITransport(app = app)
-    async with AsyncClient(transport = transport, base_url = "http://test") as ac:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
         resp = await ac.post(
             "/auth/users/search",
-            json = {"query": "alice", "limit": 10},
+            json={"query": "alice", "limit": 10},
         )
         assert resp.status_code == 401

@@ -18,12 +18,12 @@ def main() -> None:
     """
     uvicorn.run(
         "app.factory:create_app",
-        factory = True,
-        host = DEFAULT_HOST,
-        port = DEFAULT_PORT,
-        reload = settings.is_development,
-        log_level = "debug" if settings.DEBUG else "info",
-        access_log = True,
+        factory=True,
+        host=DEFAULT_HOST,
+        port=DEFAULT_PORT,
+        reload=settings.is_development,
+        log_level="debug" if settings.DEBUG else "info",
+        access_log=True,
     )
 
 

@@ -17,16 +17,17 @@ class TestAuthService:
     """
     Test authentication service basics
     """
+
     @pytest.mark.asyncio
     async def test_create_user(self, db_session: AsyncSession):
         """
         Test creating a new user
         """
         user = await auth_service.create_user(
-            session = db_session,
-            username = "newuser",
-            display_name = "New User",
-            webauthn_user_handle = secrets.token_bytes(64),
+            session=db_session,
+            username="newuser",
+            display_name="New User",
+            webauthn_user_handle=secrets.token_bytes(64),
         )
 
         assert user.id is not None
@@ -45,12 +46,12 @@ class TestAuthService:
         """
         Test cannot create user with duplicate username
         """
-        with pytest.raises(UserExistsError, match = "already exists"):
+        with pytest.raises(UserExistsError, match="already exists"):
             await auth_service.create_user(
-                session = db_session,
-                username = test_user.username,
-                display_name = "Duplicate",
-                webauthn_user_handle = secrets.token_bytes(64),
+                session=db_session,
+                username=test_user.username,
+                display_name="Duplicate",
+                webauthn_user_handle=secrets.token_bytes(64),
             )
 
     @pytest.mark.asyncio
@@ -63,8 +64,8 @@ class TestAuthService:
         Test retrieving user by username
         """
         user = await auth_service.get_user_by_username(
-            session = db_session,
-            username = test_user.username,
+            session=db_session,
+            username=test_user.username,
         )
 
         assert user is not None
@@ -77,8 +78,8 @@ class TestAuthService:
         Test getting user that doesn't exist returns None
         """
         user = await auth_service.get_user_by_username(
-            session = db_session,
-            username = "nonexistent",
+            session=db_session,
+            username="nonexistent",
         )
 
         assert user is None
@@ -93,8 +94,8 @@ class TestAuthService:
         Test retrieving user by ID
         """
         user = await auth_service.get_user_by_id(
-            session = db_session,
-            user_id = test_user.id,
+            session=db_session,
+            user_id=test_user.id,
         )
 
         assert user is not None

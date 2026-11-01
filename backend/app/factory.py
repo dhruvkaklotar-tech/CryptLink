@@ -70,13 +70,13 @@ def create_app() -> FastAPI:
     Create and configure the FastAPI application instance
     """
     app = FastAPI(
-        title = settings.APP_NAME,
-        description = APP_DESCRIPTION,
-        version = APP_VERSION,
-        docs_url = "/docs" if settings.is_development else None,
-        redoc_url = "/redoc" if settings.is_development else None,
-        default_response_class = ORJSONResponse,
-        lifespan = lifespan,
+        title=settings.APP_NAME,
+        description=APP_DESCRIPTION,
+        version=APP_VERSION,
+        docs_url="/docs" if settings.is_development else None,
+        redoc_url="/redoc" if settings.is_development else None,
+        default_response_class=ORJSONResponse,
+        lifespan=lifespan,
     )
 
     app.state.limiter = auth_limiter
@@ -84,35 +84,54 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins = settings.CORS_ORIGINS,
-        allow_credentials = True,
-        allow_methods = ["*"],
-        allow_headers = ["*"],
-        expose_headers = ["*"],
+        allow_origins=settings.CORS_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=["*"],
     )
 
-    app.add_middleware(GZipMiddleware, minimum_size = GZIP_MINIMUM_SIZE)
+    app.add_middleware(GZipMiddleware, minimum_size=GZIP_MINIMUM_SIZE)
+
+    @app.middleware("http")
+    async def add_security_headers(request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com data:; "
+            "connect-src 'self' ws: wss: http: https:; "
+            "img-src 'self' data: blob:; "
+            "frame-ancestors 'none';"
+        )
+        return response
 
     register_exception_handlers(app)
 
-    @app.get("/", tags = ["root"])
+    @app.get("/", tags=["root"])
     async def root() -> RootResponse:
         """
         Root endpoint returning API status
         """
         return RootResponse(
-            app = settings.APP_NAME,
-            version = APP_VERSION,
-            status = APP_STATUS,
-            environment = settings.ENV,
+            app=settings.APP_NAME,
+            version=APP_VERSION,
+            status=APP_STATUS,
+            environment=settings.ENV,
         )
 
-    @app.get("/health", tags = ["health"])
+    @app.get("/health", tags=["health"])
     async def health() -> HealthResponse:
         """
         Health check endpoint for monitoring
         """
-        return HealthResponse(status = "healthy")
+        return HealthResponse(status="healthy")
 
     app.include_router(auth_router)
     app.include_router(rooms_router)

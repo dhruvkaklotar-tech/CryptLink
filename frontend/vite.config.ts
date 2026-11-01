@@ -21,11 +21,11 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://backend:8000',
+        target: process.env.VITE_BACKEND_PROXY || 'http://localhost:8000',
         changeOrigin: true,
       },
       '/ws': {
-        target: 'ws://backend:8000',
+        target: (process.env.VITE_BACKEND_PROXY || 'http://localhost:8000').replace('http', 'ws'),
         ws: true,
       },
     },

@@ -14,6 +14,7 @@ class MessageResponse(BaseModel):
     """
     Message response from SurrealDB
     """
+
     id: str
     room_id: str | None = None
     sender_id: str
@@ -30,6 +31,7 @@ class RoomResponse(BaseModel):
     """
     Room response from SurrealDB
     """
+
     id: str
     name: str | None = None
     room_type: RoomType
@@ -44,6 +46,7 @@ class PresenceResponse(BaseModel):
     """
     Presence response from SurrealDB
     """
+
     id: str
     user_id: str
     room_id: str | None = None
@@ -56,6 +59,7 @@ class LiveQueryUpdate(BaseModel):
     """
     Live query update notification from SurrealDB
     """
+
     action: str
     result: MessageResponse | PresenceResponse | RoomResponse
 
@@ -64,6 +68,7 @@ class LiveMessageUpdate(BaseModel):
     """
     Live message update notification
     """
+
     action: str
     result: MessageResponse
 
@@ -72,5 +77,6 @@ class LivePresenceUpdate(BaseModel):
     """
     Live presence update notification
     """
+
     action: str
     result: PresenceResponse

@@ -6,9 +6,10 @@ auth.py
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.config import (
@@ -16,6 +17,7 @@ from app.config import (
     RATE_LIMIT_AUTH_COMPLETE,
     RATE_LIMIT_REGISTER_BEGIN,
     RATE_LIMIT_USER_SEARCH,
+    settings,
 )
 from app.core.dependencies import (
     current_user,
@@ -40,9 +42,9 @@ from app.services.auth_service import auth_service
 logger = logging.getLogger(__name__)
 
 
-router = APIRouter(prefix = "/auth", tags = ["authentication"])
+router = APIRouter(prefix="/auth", tags=["authentication"])
 
-limiter = Limiter(key_func = get_remote_address)
+limiter = Limiter(key_func=get_remote_address)
 
 
 def _user_to_response(user: User) -> UserResponse:
@@ -50,16 +52,16 @@ def _user_to_response(user: User) -> UserResponse:
     Adapt the ORM User into the API response model
     """
     return UserResponse(
-        id = str(user.id),
-        username = user.username,
-        display_name = user.display_name,
-        is_active = user.is_active,
-        is_verified = user.is_verified,
-        created_at = user.created_at.isoformat(),
+        id=str(user.id),
+        username=user.username,
+        display_name=user.display_name,
+        is_active=user.is_active,
+        is_verified=user.is_verified,
+        created_at=user.created_at.isoformat(),
     )
 
 
-@router.post("/register/begin", status_code = status.HTTP_200_OK)
+@router.post("/register/begin", status_code=status.HTTP_200_OK)
 @limiter.limit(RATE_LIMIT_REGISTER_BEGIN)
 async def register_begin(
     request: Request,
@@ -72,7 +74,7 @@ async def register_begin(
     return await auth_service.begin_registration(session, body)
 
 
-@router.post("/register/complete", status_code = status.HTTP_201_CREATED)
+@router.post("/register/complete", status_code=status.HTTP_201_CREATED)
 @limiter.limit(RATE_LIMIT_AUTH_COMPLETE)
 async def register_complete(
     request: Request,
@@ -88,7 +90,7 @@ async def register_complete(
     return _user_to_response(user)
 
 
-@router.post("/authenticate/begin", status_code = status.HTTP_200_OK)
+@router.post("/authenticate/begin", status_code=status.HTTP_200_OK)
 @limiter.limit(RATE_LIMIT_AUTH_BEGIN)
 async def authenticate_begin(
     request: Request,
@@ -101,7 +103,7 @@ async def authenticate_begin(
     return await auth_service.begin_authentication(session, body)
 
 
-@router.post("/authenticate/complete", status_code = status.HTTP_200_OK)
+@router.post("/authenticate/complete", status_code=status.HTTP_200_OK)
 @limiter.limit(RATE_LIMIT_AUTH_COMPLETE)
 async def authenticate_complete(
     request: Request,
@@ -117,7 +119,7 @@ async def authenticate_complete(
     return _user_to_response(user)
 
 
-@router.get("/me", status_code = status.HTTP_200_OK)
+@router.get("/me", status_code=status.HTTP_200_OK)
 async def me(user: User = Depends(current_user)) -> UserResponse:
     """
     Return the user bound to the current session
@@ -125,7 +127,7 @@ async def me(user: User = Depends(current_user)) -> UserResponse:
     return _user_to_response(user)
 
 
-@router.post("/logout", status_code = status.HTTP_204_NO_CONTENT)
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
     response: Response,
     token: str | None = Depends(session_token_from_cookie),
@@ -136,7 +138,24 @@ async def logout(
     await revoke_session(response, token)
 
 
-@router.post("/users/search", status_code = status.HTTP_200_OK)
+@router.post("/zeroize", status_code=status.HTTP_204_NO_CONTENT)
+async def zeroize(
+    response: Response,
+    user: User = Depends(current_user),
+    token: str | None = Depends(session_token_from_cookie),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    """
+    Military Zeroize / Forensic Emergency Duress Purge:
+    Permanently delete the user account, WebAuthn credentials, prekeys,
+    identity keys, and chat records from all databases and revoke session.
+    """
+    logger.warning("ZEROIZE ENDPOINT TRIGGERED FOR USER: %s (%s)", user.username, user.id)
+    await auth_service.zeroize_user(session, user.id)
+    await revoke_session(response, token)
+
+
+@router.post("/users/search", status_code=status.HTTP_200_OK)
 @limiter.limit(RATE_LIMIT_USER_SEARCH)
 async def search_users(
     request: Request,
@@ -151,9 +170,40 @@ async def search_users(
         session,
         body.query,
         body.limit,
-        exclude_user_id = user.id,
+        exclude_user_id=user.id,
     )
 
-    return UserSearchResponse(
-        users = [_user_to_response(u) for u in users]
-    )
+    return UserSearchResponse(users=[_user_to_response(u) for u in users])
+
+
+@router.post("/dev-login/{username}", status_code=status.HTTP_200_OK)
+async def dev_login(
+    username: str,
+    response: Response,
+    session: AsyncSession = Depends(get_session),
+) -> UserResponse:
+    """
+    Development-only helper to establish a session for UI testing without a physical WebAuthn device.
+    """
+    if settings.ENV != "development":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Dev login is only allowed in development mode",
+        )
+
+    statement = select(User).where(User.username == username)
+    result = await session.execute(statement)
+    user = result.scalar_one_or_none()
+    if not user:
+        import secrets
+        from app.config import WEBAUTHN_USER_HANDLE_BYTES
+
+        user = await auth_service.create_user(
+            session=session,
+            username=username,
+            display_name=username.capitalize(),
+            webauthn_user_handle=secrets.token_bytes(WEBAUTHN_USER_HANDLE_BYTES),
+        )
+
+    await issue_session(response, user)
+    return _user_to_response(user)

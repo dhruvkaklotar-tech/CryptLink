@@ -7,62 +7,72 @@ import type {
   OneTimePreKey,
   SerializedRatchetState,
   SignedPreKey,
-} from '../types'
+} from "../types";
 
-const DB_NAME = 'encrypted-chat-keys'
-const DB_VERSION = 1
+const DB_NAME = "encrypted-chat-keys";
+const DB_VERSION = 2;
 
 const STORES = {
-  IDENTITY: 'identity_keys',
-  SIGNED_PREKEYS: 'signed_prekeys',
-  ONE_TIME_PREKEYS: 'one_time_prekeys',
-  RATCHET_STATES: 'ratchet_states',
-} as const
+  IDENTITY: "identity_keys",
+  SIGNED_PREKEYS: "signed_prekeys",
+  ONE_TIME_PREKEYS: "one_time_prekeys",
+  RATCHET_STATES: "ratchet_states",
+  PINNED_IDENTITIES: "pinned_identities",
+  ROOM_SETTINGS: "room_settings",
+} as const;
 
-let db: IDBDatabase | null = null
+let db: IDBDatabase | null = null;
 
 async function openDatabase(): Promise<IDBDatabase> {
-  if (db !== null) return db
+  if (db !== null) return db;
 
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION)
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onerror = () => {
-      reject(new Error('Failed to open key database'))
-    }
+      reject(new Error("Failed to open key database"));
+    };
 
     request.onsuccess = () => {
-      db = request.result
-      resolve(db)
-    }
+      db = request.result;
+      resolve(db);
+    };
 
     request.onupgradeneeded = (event) => {
-      const database = (event.target as IDBOpenDBRequest).result
+      const database = (event.target as IDBOpenDBRequest).result;
 
       if (!database.objectStoreNames.contains(STORES.IDENTITY)) {
-        database.createObjectStore(STORES.IDENTITY, { keyPath: 'userId' })
+        database.createObjectStore(STORES.IDENTITY, { keyPath: "userId" });
       }
 
       if (!database.objectStoreNames.contains(STORES.SIGNED_PREKEYS)) {
         const signedStore = database.createObjectStore(STORES.SIGNED_PREKEYS, {
-          keyPath: 'id',
-        })
-        signedStore.createIndex('userId', 'userId', { unique: false })
+          keyPath: "id",
+        });
+        signedStore.createIndex("userId", "userId", { unique: false });
       }
 
       if (!database.objectStoreNames.contains(STORES.ONE_TIME_PREKEYS)) {
         const otpStore = database.createObjectStore(STORES.ONE_TIME_PREKEYS, {
-          keyPath: 'id',
-        })
-        otpStore.createIndex('userId', 'userId', { unique: false })
-        otpStore.createIndex('isUsed', 'is_used', { unique: false })
+          keyPath: "id",
+        });
+        otpStore.createIndex("userId", "userId", { unique: false });
+        otpStore.createIndex("isUsed", "is_used", { unique: false });
       }
 
       if (!database.objectStoreNames.contains(STORES.RATCHET_STATES)) {
-        database.createObjectStore(STORES.RATCHET_STATES, { keyPath: 'peer_id' })
+        database.createObjectStore(STORES.RATCHET_STATES, { keyPath: "peer_id" });
       }
-    }
-  })
+
+      if (!database.objectStoreNames.contains(STORES.PINNED_IDENTITIES)) {
+        database.createObjectStore(STORES.PINNED_IDENTITIES, { keyPath: "peer_id" });
+      }
+
+      if (!database.objectStoreNames.contains(STORES.ROOM_SETTINGS)) {
+        database.createObjectStore(STORES.ROOM_SETTINGS, { keyPath: "room_id" });
+      }
+    };
+  });
 }
 
 async function performTransaction<T>(
@@ -70,21 +80,21 @@ async function performTransaction<T>(
   mode: IDBTransactionMode,
   operation: (store: IDBObjectStore) => IDBRequest<T>
 ): Promise<T> {
-  const database = await openDatabase()
+  const database = await openDatabase();
 
   return new Promise((resolve, reject) => {
-    const transaction = database.transaction(storeName, mode)
-    const store = transaction.objectStore(storeName)
-    const request = operation(store)
+    const transaction = database.transaction(storeName, mode);
+    const store = transaction.objectStore(storeName);
+    const request = operation(store);
 
-    request.onsuccess = () => resolve(request.result)
+    request.onsuccess = () => resolve(request.result);
     request.onerror = () =>
-      reject(new Error(request.error?.message ?? 'Database operation failed'))
-  })
+      reject(new Error(request.error?.message ?? "Database operation failed"));
+  });
 }
 
 export interface StoredIdentityKey extends IdentityKeyPair {
-  userId: string
+  userId: string;
 }
 
 export async function saveIdentityKey(
@@ -94,64 +104,53 @@ export async function saveIdentityKey(
   const stored: StoredIdentityKey = {
     userId,
     ...keyPair,
-  }
+  };
 
-  await performTransaction(STORES.IDENTITY, 'readwrite', (store) =>
-    store.put(stored)
-  )
+  await performTransaction(STORES.IDENTITY, "readwrite", (store) => store.put(stored));
 }
 
-export async function getIdentityKey(
-  userId: string
-): Promise<IdentityKeyPair | null> {
+export async function getIdentityKey(userId: string): Promise<IdentityKeyPair | null> {
   const result = await performTransaction<StoredIdentityKey | undefined>(
     STORES.IDENTITY,
-    'readonly',
+    "readonly",
     (store) => store.get(userId) as IDBRequest<StoredIdentityKey | undefined>
-  )
+  );
 
-  if (result === undefined) return null
+  if (result === undefined) return null;
 
   return {
     x25519_private: result.x25519_private,
     x25519_public: result.x25519_public,
     ed25519_private: result.ed25519_private,
     ed25519_public: result.ed25519_public,
-  }
+  };
 }
 
 export async function deleteIdentityKey(userId: string): Promise<void> {
-  await performTransaction(STORES.IDENTITY, 'readwrite', (store) =>
-    store.delete(userId)
-  )
+  await performTransaction(STORES.IDENTITY, "readwrite", (store) => store.delete(userId));
 }
 
 export interface StoredSignedPreKey extends SignedPreKey {
-  userId: string
+  userId: string;
 }
 
-export async function saveSignedPreKey(
-  userId: string,
-  preKey: SignedPreKey
-): Promise<void> {
+export async function saveSignedPreKey(userId: string, preKey: SignedPreKey): Promise<void> {
   const stored: StoredSignedPreKey = {
     userId,
     ...preKey,
-  }
+  };
 
-  await performTransaction(STORES.SIGNED_PREKEYS, 'readwrite', (store) =>
-    store.put(stored)
-  )
+  await performTransaction(STORES.SIGNED_PREKEYS, "readwrite", (store) => store.put(stored));
 }
 
 export async function getSignedPreKey(id: string): Promise<SignedPreKey | null> {
   const result = await performTransaction<StoredSignedPreKey | undefined>(
     STORES.SIGNED_PREKEYS,
-    'readonly',
+    "readonly",
     (store) => store.get(id) as IDBRequest<StoredSignedPreKey | undefined>
-  )
+  );
 
-  if (result === undefined) return null
+  if (result === undefined) return null;
 
   return {
     id: result.id,
@@ -160,33 +159,30 @@ export async function getSignedPreKey(id: string): Promise<SignedPreKey | null> 
     signature: result.signature,
     created_at: result.created_at,
     expires_at: result.expires_at,
-  }
+  };
 }
 
-export async function getLatestSignedPreKey(
-  userId: string
-): Promise<SignedPreKey | null> {
-  const database = await openDatabase()
+export async function getLatestSignedPreKey(userId: string): Promise<SignedPreKey | null> {
+  const database = await openDatabase();
 
   return new Promise((resolve, reject) => {
-    const transaction = database.transaction(STORES.SIGNED_PREKEYS, 'readonly')
-    const store = transaction.objectStore(STORES.SIGNED_PREKEYS)
-    const index = store.index('userId')
-    const request = index.getAll(userId)
+    const transaction = database.transaction(STORES.SIGNED_PREKEYS, "readonly");
+    const store = transaction.objectStore(STORES.SIGNED_PREKEYS);
+    const index = store.index("userId");
+    const request = index.getAll(userId);
 
     request.onsuccess = () => {
-      const results = request.result as StoredSignedPreKey[]
+      const results = request.result as StoredSignedPreKey[];
       if (results.length === 0) {
-        resolve(null)
-        return
+        resolve(null);
+        return;
       }
 
       const sorted = results.sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      )
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
 
-      const latest = sorted[0]
+      const latest = sorted[0];
       resolve({
         id: latest.id,
         private_key: latest.private_key,
@@ -194,74 +190,63 @@ export async function getLatestSignedPreKey(
         signature: latest.signature,
         created_at: latest.created_at,
         expires_at: latest.expires_at,
-      })
-    }
+      });
+    };
 
     request.onerror = () =>
-      reject(new Error(request.error?.message ?? 'Failed to get signed prekey'))
-  })
+      reject(new Error(request.error?.message ?? "Failed to get signed prekey"));
+  });
 }
 
 export async function deleteSignedPreKey(id: string): Promise<void> {
-  await performTransaction(STORES.SIGNED_PREKEYS, 'readwrite', (store) =>
-    store.delete(id)
-  )
+  await performTransaction(STORES.SIGNED_PREKEYS, "readwrite", (store) => store.delete(id));
 }
 
 export interface StoredOneTimePreKey extends OneTimePreKey {
-  userId: string
+  userId: string;
 }
 
-export async function saveOneTimePreKey(
-  userId: string,
-  preKey: OneTimePreKey
-): Promise<void> {
+export async function saveOneTimePreKey(userId: string, preKey: OneTimePreKey): Promise<void> {
   const stored: StoredOneTimePreKey = {
     userId,
     ...preKey,
-  }
+  };
 
-  await performTransaction(STORES.ONE_TIME_PREKEYS, 'readwrite', (store) =>
-    store.put(stored)
-  )
+  await performTransaction(STORES.ONE_TIME_PREKEYS, "readwrite", (store) => store.put(stored));
 }
 
 export async function saveOneTimePreKeys(
   userId: string,
   preKeys: OneTimePreKey[]
 ): Promise<void> {
-  const database = await openDatabase()
+  const database = await openDatabase();
 
   return new Promise((resolve, reject) => {
-    const transaction = database.transaction(STORES.ONE_TIME_PREKEYS, 'readwrite')
-    const store = transaction.objectStore(STORES.ONE_TIME_PREKEYS)
+    const transaction = database.transaction(STORES.ONE_TIME_PREKEYS, "readwrite");
+    const store = transaction.objectStore(STORES.ONE_TIME_PREKEYS);
 
-    transaction.oncomplete = () => resolve()
+    transaction.oncomplete = () => resolve();
     transaction.onerror = () =>
-      reject(
-        new Error(transaction.error?.message ?? 'Failed to save one-time prekeys')
-      )
+      reject(new Error(transaction.error?.message ?? "Failed to save one-time prekeys"));
 
     for (const preKey of preKeys) {
       const stored: StoredOneTimePreKey = {
         userId,
         ...preKey,
-      }
-      store.put(stored)
+      };
+      store.put(stored);
     }
-  })
+  });
 }
 
-export async function getOneTimePreKey(
-  id: string
-): Promise<OneTimePreKey | null> {
+export async function getOneTimePreKey(id: string): Promise<OneTimePreKey | null> {
   const result = await performTransaction<StoredOneTimePreKey | undefined>(
     STORES.ONE_TIME_PREKEYS,
-    'readonly',
+    "readonly",
     (store) => store.get(id) as IDBRequest<StoredOneTimePreKey | undefined>
-  )
+  );
 
-  if (result === undefined) return null
+  if (result === undefined) return null;
 
   return {
     id: result.id,
@@ -269,26 +254,26 @@ export async function getOneTimePreKey(
     public_key: result.public_key,
     is_used: result.is_used,
     created_at: result.created_at,
-  }
+  };
 }
 
 export async function getOneTimePreKeyByPublicKey(
   publicKey: string
 ): Promise<OneTimePreKey | null> {
-  const database = await openDatabase()
+  const database = await openDatabase();
 
   return new Promise((resolve, reject) => {
-    const transaction = database.transaction(STORES.ONE_TIME_PREKEYS, 'readonly')
-    const store = transaction.objectStore(STORES.ONE_TIME_PREKEYS)
-    const request = store.getAll()
+    const transaction = database.transaction(STORES.ONE_TIME_PREKEYS, "readonly");
+    const store = transaction.objectStore(STORES.ONE_TIME_PREKEYS);
+    const request = store.getAll();
 
     request.onsuccess = () => {
-      const results = request.result as StoredOneTimePreKey[]
-      const match = results.find((r) => r.public_key === publicKey)
+      const results = request.result as StoredOneTimePreKey[];
+      const match = results.find((r) => r.public_key === publicKey);
 
       if (!match) {
-        resolve(null)
-        return
+        resolve(null);
+        return;
       }
 
       resolve({
@@ -297,29 +282,25 @@ export async function getOneTimePreKeyByPublicKey(
         public_key: match.public_key,
         is_used: match.is_used,
         created_at: match.created_at,
-      })
-    }
+      });
+    };
 
     request.onerror = () =>
-      reject(
-        new Error(request.error?.message ?? 'Failed to find one-time prekey')
-      )
-  })
+      reject(new Error(request.error?.message ?? "Failed to find one-time prekey"));
+  });
 }
 
-export async function getUnusedOneTimePreKeys(
-  userId: string
-): Promise<OneTimePreKey[]> {
-  const database = await openDatabase()
+export async function getUnusedOneTimePreKeys(userId: string): Promise<OneTimePreKey[]> {
+  const database = await openDatabase();
 
   return new Promise((resolve, reject) => {
-    const transaction = database.transaction(STORES.ONE_TIME_PREKEYS, 'readonly')
-    const store = transaction.objectStore(STORES.ONE_TIME_PREKEYS)
-    const index = store.index('userId')
-    const request = index.getAll(userId)
+    const transaction = database.transaction(STORES.ONE_TIME_PREKEYS, "readonly");
+    const store = transaction.objectStore(STORES.ONE_TIME_PREKEYS);
+    const index = store.index("userId");
+    const request = index.getAll(userId);
 
     request.onsuccess = () => {
-      const results = request.result as StoredOneTimePreKey[]
+      const results = request.result as StoredOneTimePreKey[];
       const unused = results
         .filter((r) => !r.is_used)
         .map((r) => ({
@@ -328,86 +309,70 @@ export async function getUnusedOneTimePreKeys(
           public_key: r.public_key,
           is_used: r.is_used,
           created_at: r.created_at,
-        }))
+        }));
 
-      resolve(unused)
-    }
+      resolve(unused);
+    };
 
     request.onerror = () =>
-      reject(
-        new Error(
-          request.error?.message ?? 'Failed to get unused one-time prekeys'
-        )
-      )
-  })
+      reject(new Error(request.error?.message ?? "Failed to get unused one-time prekeys"));
+  });
 }
 
 export async function markOneTimePreKeyUsed(id: string): Promise<void> {
   const preKey = await performTransaction<StoredOneTimePreKey | undefined>(
     STORES.ONE_TIME_PREKEYS,
-    'readonly',
+    "readonly",
     (store) => store.get(id) as IDBRequest<StoredOneTimePreKey | undefined>
-  )
+  );
 
-  if (preKey === undefined) return
+  if (preKey === undefined) return;
 
-  preKey.is_used = true
+  preKey.is_used = true;
 
-  await performTransaction(STORES.ONE_TIME_PREKEYS, 'readwrite', (store) =>
-    store.put(preKey)
-  )
+  await performTransaction(STORES.ONE_TIME_PREKEYS, "readwrite", (store) => store.put(preKey));
 }
 
 export async function deleteOneTimePreKey(id: string): Promise<void> {
-  await performTransaction(STORES.ONE_TIME_PREKEYS, 'readwrite', (store) =>
-    store.delete(id)
-  )
+  await performTransaction(STORES.ONE_TIME_PREKEYS, "readwrite", (store) => store.delete(id));
 }
 
-export async function saveRatchetState(
-  state: SerializedRatchetState
-): Promise<void> {
-  await performTransaction(STORES.RATCHET_STATES, 'readwrite', (store) =>
-    store.put(state)
-  )
+export async function saveRatchetState(state: SerializedRatchetState): Promise<void> {
+  await performTransaction(STORES.RATCHET_STATES, "readwrite", (store) => store.put(state));
 }
 
-export async function getRatchetState(
-  peerId: string
-): Promise<SerializedRatchetState | null> {
+export async function getRatchetState(peerId: string): Promise<SerializedRatchetState | null> {
   const result = await performTransaction<SerializedRatchetState | undefined>(
     STORES.RATCHET_STATES,
-    'readonly',
+    "readonly",
     (store) => store.get(peerId) as IDBRequest<SerializedRatchetState | undefined>
-  )
+  );
 
-  return result ?? null
+  return result ?? null;
 }
 
 export async function deleteRatchetState(peerId: string): Promise<void> {
-  await performTransaction(STORES.RATCHET_STATES, 'readwrite', (store) =>
+  await performTransaction(STORES.RATCHET_STATES, "readwrite", (store) =>
     store.delete(peerId)
-  )
+  );
 }
 
 export async function getAllRatchetStates(): Promise<SerializedRatchetState[]> {
-  const database = await openDatabase()
+  const database = await openDatabase();
 
   return new Promise((resolve, reject) => {
-    const transaction = database.transaction(STORES.RATCHET_STATES, 'readonly')
-    const store = transaction.objectStore(STORES.RATCHET_STATES)
-    const request = store.getAll()
+    const transaction = database.transaction(STORES.RATCHET_STATES, "readonly");
+    const store = transaction.objectStore(STORES.RATCHET_STATES);
+    const request = store.getAll();
 
-    request.onsuccess = () => resolve(request.result as SerializedRatchetState[])
+    request.onsuccess = () => resolve(request.result as SerializedRatchetState[]);
     request.onerror = () =>
-      reject(
-        new Error(request.error?.message ?? 'Failed to get all ratchet states')
-      )
-  })
+      reject(new Error(request.error?.message ?? "Failed to get all ratchet states"));
+  });
 }
 
 export async function clearAllKeys(): Promise<void> {
-  const database = await openDatabase()
+  const database = await openDatabase();
 
   return new Promise((resolve, reject) => {
     const storeNames = [
@@ -415,23 +380,161 @@ export async function clearAllKeys(): Promise<void> {
       STORES.SIGNED_PREKEYS,
       STORES.ONE_TIME_PREKEYS,
       STORES.RATCHET_STATES,
-    ]
+      STORES.PINNED_IDENTITIES,
+      STORES.ROOM_SETTINGS,
+    ];
 
-    const transaction = database.transaction(storeNames, 'readwrite')
+    const transaction = database.transaction(storeNames, "readwrite");
 
-    transaction.oncomplete = () => resolve()
+    transaction.oncomplete = () => resolve();
     transaction.onerror = () =>
-      reject(new Error(transaction.error?.message ?? 'Failed to clear all keys'))
+      reject(new Error(transaction.error?.message ?? "Failed to clear all keys"));
 
     for (const storeName of storeNames) {
-      transaction.objectStore(storeName).clear()
+      transaction.objectStore(storeName).clear();
     }
-  })
+  });
+}
+
+export interface PinnedIdentity {
+  peer_id: string;
+  identity_key: string;
+  identity_key_ed25519: string;
+  first_seen: string;
+  pinned_at: string;
+  is_verified: boolean;
+  status: "trusted" | "verified" | "compromised";
+}
+
+export async function pinOrVerifyPeerIdentity(
+  peerId: string,
+  identityKey: string,
+  identityKeyEd25519?: string
+): Promise<{ status: "trusted" | "verified" | "compromised"; isNew: boolean }> {
+  const existing = await getPinnedIdentity(peerId);
+  const now = new Date().toISOString();
+
+  if (existing === null) {
+    const newRecord: PinnedIdentity = {
+      peer_id: peerId,
+      identity_key: identityKey,
+      identity_key_ed25519: identityKeyEd25519 ?? "",
+      first_seen: now,
+      pinned_at: now,
+      is_verified: false,
+      status: "trusted",
+    };
+    await performTransaction(STORES.PINNED_IDENTITIES, "readwrite", (store) =>
+      store.put(newRecord)
+    );
+    return { status: "trusted", isNew: true };
+  }
+
+  // Check if X25519 key matches
+  const x25519Matches = existing.identity_key === identityKey;
+
+  // Check if Ed25519 key matches (if provided)
+  let ed25519Matches = true;
+  if (identityKeyEd25519 && existing.identity_key_ed25519) {
+    if (existing.identity_key_ed25519 !== identityKeyEd25519) {
+      // If previously stored Ed25519 was mistakenly set to the X25519 key, heal it
+      if (
+        existing.identity_key_ed25519 === existing.identity_key &&
+        identityKeyEd25519 !== identityKey
+      ) {
+        existing.identity_key_ed25519 = identityKeyEd25519;
+      } else {
+        ed25519Matches = false;
+      }
+    }
+  } else if (identityKeyEd25519 && !existing.identity_key_ed25519) {
+    existing.identity_key_ed25519 = identityKeyEd25519;
+  }
+
+  if (x25519Matches && ed25519Matches) {
+    if (existing.status === "compromised") {
+      existing.status = existing.is_verified ? "verified" : "trusted";
+    }
+    await performTransaction(STORES.PINNED_IDENTITIES, "readwrite", (store) =>
+      store.put(existing)
+    );
+    const currentStatus = existing.is_verified ? "verified" : "trusted";
+    return { status: currentStatus, isNew: false };
+  }
+
+  // CRITICAL: IDENTITY KEY MISMATCH DETECTED (POTENTIAL MITM SUBSTITUTION ATTACK)
+  existing.status = "compromised";
+  await performTransaction(STORES.PINNED_IDENTITIES, "readwrite", (store) =>
+    store.put(existing)
+  );
+  return { status: "compromised", isNew: false };
+}
+
+export async function getPinnedIdentity(peerId: string): Promise<PinnedIdentity | null> {
+  const result = await performTransaction<PinnedIdentity | undefined>(
+    STORES.PINNED_IDENTITIES,
+    "readonly",
+    (store) => store.get(peerId) as IDBRequest<PinnedIdentity | undefined>
+  );
+  return result ?? null;
+}
+
+export async function setPeerVerificationStatus(
+  peerId: string,
+  isVerified: boolean
+): Promise<void> {
+  const existing = await getPinnedIdentity(peerId);
+  if (existing) {
+    existing.is_verified = isVerified;
+    existing.status = isVerified ? "verified" : "trusted";
+    await performTransaction(STORES.PINNED_IDENTITIES, "readwrite", (store) =>
+      store.put(existing)
+    );
+  }
+}
+
+export async function trustNewPeerIdentity(
+  peerId: string,
+  newIdentityKey: string,
+  newEd25519Key: string
+): Promise<void> {
+  const now = new Date().toISOString();
+  const record: PinnedIdentity = {
+    peer_id: peerId,
+    identity_key: newIdentityKey,
+    identity_key_ed25519: newEd25519Key,
+    first_seen: now,
+    pinned_at: now,
+    is_verified: true,
+    status: "verified",
+  };
+  await performTransaction(STORES.PINNED_IDENTITIES, "readwrite", (store) =>
+    store.put(record)
+  );
+}
+
+export interface RoomSettings {
+  room_id: string;
+  disappearing_ttl_seconds: number;
+  updated_at: string;
+}
+
+export async function getRoomSettings(roomId: string): Promise<RoomSettings | null> {
+  const result = await performTransaction<RoomSettings | undefined>(
+    STORES.ROOM_SETTINGS,
+    "readonly",
+    (store) => store.get(roomId) as IDBRequest<RoomSettings | undefined>
+  );
+  return result ?? null;
+}
+
+export async function saveRoomSettings(settings: RoomSettings): Promise<void> {
+  await performTransaction(STORES.ROOM_SETTINGS, "readwrite", (store) => store.put(settings));
 }
 
 export function closeDatabase(): void {
   if (db !== null) {
-    db.close()
-    db = null
+    db.close();
+    db = null;
   }
 }

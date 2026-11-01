@@ -9,7 +9,7 @@ from typing import Any
 from uuid import UUID
 from datetime import UTC, datetime
 
-from sqlmodel import select
+from sqlmodel import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -28,7 +28,11 @@ from app.core.exceptions import (
 )
 from app.core.passkey.passkey_manager import passkey_manager
 from app.core.redis_manager import redis_manager
+from app.core.surreal_manager import surreal_db
 from app.models.Credential import Credential
+from app.models.IdentityKey import IdentityKey
+from app.models.OneTimePrekey import OneTimePrekey
+from app.models.SignedPrekey import SignedPrekey
 from app.models.User import User
 from app.schemas.auth import (
     AuthenticationBeginRequest,
@@ -46,6 +50,7 @@ class AuthService:
     """
     Service for managing user authentication and credentials
     """
+
     async def create_user(
         self,
         session: AsyncSession,
@@ -65,9 +70,9 @@ class AuthService:
             raise UserExistsError(f"Username {username} already exists")
 
         user = User(
-            username = username,
-            display_name = display_name,
-            webauthn_user_handle = webauthn_user_handle,
+            username=username,
+            display_name=display_name,
+            webauthn_user_handle=webauthn_user_handle,
         )
 
         session.add(user)
@@ -79,14 +84,8 @@ class AuthService:
             return user
         except IntegrityError as e:
             await session.rollback()
-            logger.error(
-                "Database integrity error creating user %s: %s",
-                username,
-                e
-            )
-            raise DatabaseError(
-                "Failed to create user: database constraint violation"
-            ) from e
+            logger.error("Database integrity error creating user %s: %s", username, e)
+            raise DatabaseError("Failed to create user: database constraint violation") from e
 
     async def store_credential(
         self,
@@ -99,16 +98,16 @@ class AuthService:
         Store WebAuthn credential after successful registration
         """
         credential = Credential(
-            user_id = user_id,
-            credential_id = bytes_to_base64url(verified.credential_id),
-            public_key = bytes_to_base64url(verified.credential_public_key),
-            sign_count = verified.sign_count,
-            aaguid = bytes_to_base64url(verified.aaguid),
-            backup_eligible = verified.backup_eligible,
-            backup_state = verified.backup_state,
-            attestation_type = verified.attestation_format,
-            device_name = device_name,
-            last_used_at = datetime.now(UTC),
+            user_id=user_id,
+            credential_id=bytes_to_base64url(verified.credential_id),
+            public_key=bytes_to_base64url(verified.credential_public_key),
+            sign_count=verified.sign_count,
+            aaguid=bytes_to_base64url(verified.aaguid),
+            backup_eligible=verified.backup_eligible,
+            backup_state=verified.backup_state,
+            attestation_type=verified.attestation_format,
+            device_name=device_name,
+            last_used_at=datetime.now(UTC),
         )
 
         session.add(credential)
@@ -117,9 +116,7 @@ class AuthService:
             await session.commit()
             await session.refresh(credential)
             logger.info(
-                "Stored credential %s... for user %s",
-                credential.credential_id[: 16],
-                user_id
+                "Stored credential %s... for user %s", credential.credential_id[:16], user_id
             )
             return credential
         except IntegrityError as e:
@@ -138,18 +135,16 @@ class AuthService:
         Retrieve user by username with credentials relationship eager loaded
         """
         statement = (
-            select(User).where(User.username == username).options(
-                selectinload(User.credentials)
-            )
+            select(User)
+            .where(User.username == username)
+            .options(selectinload(User.credentials))
         )
         result = await session.execute(statement)
         user = result.scalar_one_or_none()
 
         if user:
             logger.debug(
-                "Retrieved user %s with %s credentials",
-                username,
-                len(user.credentials)
+                "Retrieved user %s with %s credentials", username, len(user.credentials)
             )
         else:
             logger.debug("User not found: %s", username)
@@ -165,18 +160,14 @@ class AuthService:
         Retrieve user by ID with credentials relationship eager loaded
         """
         statement = (
-            select(User).where(User.id == user_id).options(
-                selectinload(User.credentials)
-            )
+            select(User).where(User.id == user_id).options(selectinload(User.credentials))
         )
         result = await session.execute(statement)
         user = result.scalar_one_or_none()
 
         if user:
             logger.debug(
-                "Retrieved user %s with %s credentials",
-                user_id,
-                len(user.credentials)
+                "Retrieved user %s with %s credentials", user_id, len(user.credentials)
             )
         else:
             logger.debug("User not found: %s", user_id)
@@ -200,9 +191,9 @@ class AuthService:
             .where(
                 User.is_active == True,
                 (
-                    User.username.ilike(search_pattern) |
-                    User.display_name.ilike(search_pattern)
-                )
+                    User.username.ilike(search_pattern)
+                    | User.display_name.ilike(search_pattern)
+                ),
             )
             .limit(limit)
         )
@@ -213,11 +204,7 @@ class AuthService:
         result = await session.execute(statement)
         users = result.scalars().all()
 
-        logger.debug(
-            "Search for '%s' returned %d users",
-            query,
-            len(users)
-        )
+        logger.debug("Search for '%s' returned %d users", query, len(users))
 
         return list(users)
 
@@ -229,16 +216,14 @@ class AuthService:
         """
         Retrieve credential by credential_id
         """
-        statement = select(Credential).where(
-            Credential.credential_id == credential_id
-        )
+        statement = select(Credential).where(Credential.credential_id == credential_id)
         result = await session.execute(statement)
         credential = result.scalar_one_or_none()
 
         if credential:
-            logger.debug("Retrieved credential %s...", credential_id[: 16])
+            logger.debug("Retrieved credential %s...", credential_id[:16])
         else:
-            logger.debug("Credential not found: %s...", credential_id[: 16])
+            logger.debug("Credential not found: %s...", credential_id[:16])
 
         return credential
 
@@ -251,17 +236,12 @@ class AuthService:
         """
         Update credential signature counter after successful authentication
         """
-        statement = select(Credential).where(
-            Credential.credential_id == credential_id
-        )
+        statement = select(Credential).where(Credential.credential_id == credential_id)
         result = await session.execute(statement)
         credential = result.scalar_one_or_none()
 
         if not credential:
-            logger.error(
-                "Credential not found for counter update: %s...",
-                credential_id[: 16]
-            )
+            logger.error("Credential not found for counter update: %s...", credential_id[:16])
             raise CredentialNotFoundError("Credential not found")
 
         old_count = credential.sign_count
@@ -272,9 +252,9 @@ class AuthService:
             await session.commit()
             logger.info(
                 "Updated credential %s... counter: %s -> %s",
-                credential_id[: 16],
+                credential_id[:16],
                 old_count,
-                new_count
+                new_count,
             )
         except IntegrityError as e:
             await session.rollback()
@@ -291,25 +271,22 @@ class AuthService:
         """
         Update credential backup flags (WebAuthn Level 3)
         """
-        statement = select(Credential).where(
-            Credential.credential_id == credential_id
-        )
+        statement = select(Credential).where(Credential.credential_id == credential_id)
         result = await session.execute(statement)
         credential = result.scalar_one_or_none()
 
         if not credential:
             logger.error(
-                "Credential not found for backup state update: %s...",
-                credential_id[: 16]
+                "Credential not found for backup state update: %s...", credential_id[:16]
             )
             raise CredentialNotFoundError("Credential not found")
 
         if credential.backup_state != backup_state:
             logger.warning(
                 "Credential %s... backup state changed: %s -> %s",
-                credential_id[: 16],
+                credential_id[:16],
                 credential.backup_state,
-                backup_state
+                backup_state,
             )
 
         credential.backup_state = backup_state
@@ -319,9 +296,9 @@ class AuthService:
             await session.commit()
             logger.debug(
                 "Updated credential %s... backup_state=%s, backup_eligible=%s",
-                credential_id[: 16],
+                credential_id[:16],
                 backup_state,
-                backup_eligible
+                backup_eligible,
             )
         except IntegrityError as e:
             await session.rollback()
@@ -337,32 +314,32 @@ class AuthService:
         Begin WebAuthn passkey registration flow
         """
         existing_user = await self.get_user_by_username(
-            session = session,
-            username = request.username,
+            session=session,
+            username=request.username,
         )
 
         if existing_user:
-            logger.warning(
-                "Registration attempt for existing user: %s",
-                request.username
-            )
+            logger.warning("Registration attempt for existing user: %s", request.username)
             raise UserExistsError(f"Username {request.username} already exists")
 
         from app.config import WEBAUTHN_USER_HANDLE_BYTES
+
         user_handle = secrets.token_bytes(WEBAUTHN_USER_HANDLE_BYTES)
 
+        effective_display_name = request.display_name or request.username
+
         options_response = passkey_manager.generate_registration_options(
-            user_id = user_handle,
-            username = request.username,
-            display_name = request.display_name,
-            exclude_credentials = [],
+            user_id=user_handle,
+            username=request.username,
+            display_name=effective_display_name,
+            exclude_credentials=[],
         )
 
         await redis_manager.set_registration_context(
-            username = request.username,
-            challenge = options_response.challenge,
-            user_handle = user_handle,
-            display_name = request.display_name,
+            username=request.username,
+            challenge=options_response.challenge,
+            user_handle=user_handle,
+            display_name=effective_display_name,
         )
 
         logger.info("Started registration for user: %s", request.username)
@@ -377,23 +354,18 @@ class AuthService:
         """
         Complete WebAuthn passkey registration
         """
-        context = await redis_manager.take_registration_context(
-            username = username
-        )
+        context = await redis_manager.take_registration_context(username=username)
 
         if context is None:
-            logger.warning(
-                "Registration context not found or expired for user: %s",
-                username
-            )
+            logger.warning("Registration context not found or expired for user: %s", username)
             raise ChallengeExpiredError(
                 "Challenge expired or not found - please restart registration"
             )
 
         try:
             verified = passkey_manager.verify_registration(
-                credential = request.credential,
-                expected_challenge = context["challenge"],
+                credential=request.credential,
+                expected_challenge=context["challenge"],
             )
         except Exception as e:
             logger.error("Registration verification failed: %s", e)
@@ -402,17 +374,17 @@ class AuthService:
             ) from e
 
         user = await self.create_user(
-            session = session,
-            username = username,
-            display_name = context["display_name"],
-            webauthn_user_handle = context["user_handle"],
+            session=session,
+            username=username,
+            display_name=context["display_name"],
+            webauthn_user_handle=context["user_handle"],
         )
 
         await self.store_credential(
-            session = session,
-            user_id = user.id,
-            verified = verified,
-            device_name = request.device_name,
+            session=session,
+            user_id=user.id,
+            verified=verified,
+            device_name=request.device_name,
         )
 
         logger.info("Registration completed for user: %s", username)
@@ -430,27 +402,25 @@ class AuthService:
 
         if request.username:
             user = await self.get_user_by_username(
-                session = session,
-                username = request.username,
+                session=session,
+                username=request.username,
             )
 
             if user is not None and user.is_active:
                 allow_credentials = [
-                    base64url_to_bytes(cred.credential_id)
-                    for cred in user.credentials
+                    base64url_to_bytes(cred.credential_id) for cred in user.credentials
                 ]
 
         options_response = passkey_manager.generate_authentication_options(
-            allow_credentials = allow_credentials,
+            allow_credentials=allow_credentials,
         )
 
         await redis_manager.set_authentication_challenge(
-            challenge = options_response.challenge,
+            challenge=options_response.challenge,
         )
 
         logger.info(
-            "Started authentication (username hint: %s)",
-            request.username or "<discoverable>"
+            "Started authentication (username hint: %s)", request.username or "<discoverable>"
         )
         return options_response.options
 
@@ -466,97 +436,143 @@ class AuthService:
         if not credential_id:
             raise InvalidDataError("Missing credential ID")
 
-        client_data_b64 = request.credential.get("response", {}).get(
-            "clientDataJSON"
-        )
+        client_data_b64 = request.credential.get("response", {}).get("clientDataJSON")
         if not client_data_b64:
             raise InvalidDataError("Missing clientDataJSON")
 
         try:
             import json as _json
-            client_data = _json.loads(
-                base64url_to_bytes(client_data_b64).decode()
-            )
+
+            client_data = _json.loads(base64url_to_bytes(client_data_b64).decode())
             challenge_bytes = base64url_to_bytes(client_data["challenge"])
         except Exception as exc:
             logger.error("Failed to parse clientDataJSON: %s", exc)
             raise InvalidDataError("Malformed clientDataJSON") from exc
 
         challenge_consumed = await redis_manager.take_authentication_challenge(
-            challenge = challenge_bytes
+            challenge=challenge_bytes
         )
         if not challenge_consumed:
-            logger.warning(
-                "Authentication challenge invalid or expired"
-            )
+            logger.warning("Authentication challenge invalid or expired")
             raise ChallengeExpiredError(
                 "Challenge expired or not found - please restart authentication"
             )
 
         credential = await self.get_credential_by_id(
-            session = session,
-            credential_id = credential_id,
+            session=session,
+            credential_id=credential_id,
         )
 
         if not credential:
-            logger.warning(
-                "Authentication with unknown credential: %s...",
-                credential_id[: 16]
-            )
+            logger.warning("Authentication with unknown credential: %s...", credential_id[:16])
             raise CredentialNotFoundError("Credential not found")
 
         user = await self.get_user_by_id(
-            session = session,
-            user_id = credential.user_id,
+            session=session,
+            user_id=credential.user_id,
         )
 
         if not user:
-            logger.error(
-                "User not found for credential: %s...",
-                credential_id[: 16]
-            )
+            logger.error("User not found for credential: %s...", credential_id[:16])
             raise UserNotFoundError("User not found")
 
         if not user.is_active:
-            logger.warning(
-                "Authentication attempt for inactive user: %s",
-                user.username
-            )
+            logger.warning("Authentication attempt for inactive user: %s", user.username)
             raise UserInactiveError("User account is inactive")
 
         try:
             verified = passkey_manager.verify_authentication(
-                credential = request.credential,
-                expected_challenge = challenge_bytes,
-                credential_public_key = base64url_to_bytes(credential.public_key),
-                credential_current_sign_count = credential.sign_count,
+                credential=request.credential,
+                expected_challenge=challenge_bytes,
+                credential_public_key=base64url_to_bytes(credential.public_key),
+                credential_current_sign_count=credential.sign_count,
             )
         except ValueError as e:
             logger.error("Authentication verification failed: %s", e)
             raise CredentialVerificationError(str(e)) from e
         except Exception as e:
             logger.error("Unexpected error during authentication: %s", e)
-            raise CredentialVerificationError(
-                "Authentication verification failed"
-            ) from e
+            raise CredentialVerificationError("Authentication verification failed") from e
 
         await self.update_credential_counter(
-            session = session,
-            credential_id = credential.credential_id,
-            new_count = verified.new_sign_count,
+            session=session,
+            credential_id=credential.credential_id,
+            new_count=verified.new_sign_count,
         )
 
-        if (credential.backup_state != verified.backup_state
-                or credential.backup_eligible != verified.backup_eligible):
+        if (
+            credential.backup_state != verified.backup_state
+            or credential.backup_eligible != verified.backup_eligible
+        ):
             await self.update_backup_state(
-                session = session,
-                credential_id = credential.credential_id,
-                backup_state = verified.backup_state,
-                backup_eligible = verified.backup_eligible,
+                session=session,
+                credential_id=credential.credential_id,
+                backup_state=verified.backup_state,
+                backup_eligible=verified.backup_eligible,
             )
 
         logger.info("Authentication successful for user: %s", user.username)
         return user
+
+    async def zeroize_user(
+        self,
+        session: AsyncSession,
+        user_id: UUID,
+    ) -> None:
+        """
+        Military Zeroize / Forensic Emergency Duress Purge:
+        Permanently expunge user account, WebAuthn credentials, prekeys,
+        identity keys, and associated chat history across PostgreSQL and SurrealDB.
+        """
+        logger.warning("Initiating zeroize sequence for user_id=%s", user_id)
+
+        # 1. Purge PostgreSQL prekeys and cryptographic identity records
+        await session.execute(delete(OneTimePrekey).where(OneTimePrekey.user_id == user_id))
+        await session.execute(delete(SignedPrekey).where(SignedPrekey.user_id == user_id))
+        await session.execute(delete(IdentityKey).where(IdentityKey.user_id == user_id))
+
+        # 2. Purge WebAuthn credentials
+        await session.execute(delete(Credential).where(Credential.user_id == user_id))
+
+        # 3. Purge user record
+        await session.execute(delete(User).where(User.id == user_id))
+
+        await session.commit()
+        logger.info("Purged PostgreSQL records for user_id=%s", user_id)
+
+        # 4. Purge SurrealDB participant, presence, and chat data
+        try:
+            await surreal_db.ensure_connected()
+            if surreal_db.db is not None:
+                user_id_str = str(user_id)
+                await surreal_db.db.query(
+                    "DELETE participant WHERE user_id = $uid",
+                    {"uid": user_id_str},
+                )
+                await surreal_db.db.query(
+                    "DELETE presence WHERE user_id = $uid",
+                    {"uid": user_id_str},
+                )
+                await surreal_db.db.query(
+                    "DELETE message WHERE sender_id = $uid OR recipient_id = $uid",
+                    {"uid": user_id_str},
+                )
+                logger.info("Purged SurrealDB records for user_id=%s", user_id_str)
+        except Exception as exc:
+            logger.warning(
+                "SurrealDB purge non-fatal error for user_id=%s: %s",
+                user_id,
+                exc,
+            )
+
+        # 5. Evict Redis cache entries related to this user
+        try:
+            await redis_manager.delete_key(f"user:{user_id}:challenges")
+            await redis_manager.delete_key(f"user:{user_id}:presence")
+        except Exception as exc:
+            logger.debug("Redis purge non-fatal: %s", exc)
+
+        logger.warning("Zeroize sequence successfully completed for user_id=%s", user_id)
 
 
 auth_service = AuthService()

@@ -8,6 +8,7 @@ class AppException(Exception):
     """
     Base application exception
     """
+
     def __init__(self, message: str) -> None:
         """
         Initialize exception with message

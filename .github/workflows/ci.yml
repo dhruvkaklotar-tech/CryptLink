@@ -1,0 +1,114 @@
+name: CryptLink High-Assurance CI/CD
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+permissions:
+  contents: read
+
+jobs:
+  backend-audit:
+    name: Backend Cryptographic & Security Audits
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: chat_auth
+          POSTGRES_USER: chat_user
+          POSTGRES_PASSWORD: change-this-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+      surrealdb:
+        image: surrealdb/surrealdb:v3.0.5
+        ports:
+          - 8000:8000
+        options: >-
+          --health-cmd "surreal is-ready"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev
+
+      - name: Install Backend Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff pytest pytest-asyncio httpx websockets cryptography
+          pip install -e backend/.[dev]
+
+      - name: Run Ruff Code Quality & Linter
+        run: |
+          ruff check backend/app/ backend/tests/
+
+      - name: Run Ruff Formatting Check
+        run: |
+          ruff format --check backend/app/ backend/tests/
+
+      - name: Run Pytest Cryptographic & Attack Test Suite
+        env:
+          DATABASE_URL: postgresql+asyncpg://chat_user:change-this-password@localhost:5432/chat_auth
+          REDIS_URL: redis://localhost:6379
+          SURREAL_URL: ws://localhost:8000
+          ENV: test
+        run: |
+          pytest backend/tests -v
+
+  frontend-audit:
+    name: Frontend Cryptographic & Reactivity Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: TypeScript Static Typecheck
+        working-directory: frontend
+        run: npm run typecheck
+
+      - name: Run Cryptographic Primitives & Double Ratchet Tests (Vitest)
+        working-directory: frontend
+        run: npm test -- --run
+
+      - name: Production Vite Bundler Verification
+        working-directory: frontend
+        run: npm run build

@@ -19,15 +19,16 @@ class PresenceService:
     """
     Service for managing user presence status in real time
     """
+
     async def set_user_online(self, user_id: UUID) -> None:
         """
         Mark user as online and update last seen timestamp
         """
         try:
             await surreal_db.update_presence(
-                user_id = str(user_id),
-                status = PresenceStatus.ONLINE.value,
-                last_seen = datetime.now(UTC).isoformat()
+                user_id=str(user_id),
+                status=PresenceStatus.ONLINE.value,
+                last_seen=datetime.now(UTC).isoformat(),
             )
             logger.info("User %s is now online", user_id)
         except Exception as e:
@@ -40,9 +41,9 @@ class PresenceService:
         """
         try:
             await surreal_db.update_presence(
-                user_id = str(user_id),
-                status = PresenceStatus.OFFLINE.value,
-                last_seen = datetime.now(UTC).isoformat()
+                user_id=str(user_id),
+                status=PresenceStatus.OFFLINE.value,
+                last_seen=datetime.now(UTC).isoformat(),
             )
             logger.info("User %s is now offline", user_id)
         except Exception as e:
@@ -55,9 +56,9 @@ class PresenceService:
         """
         try:
             await surreal_db.update_presence(
-                user_id = str(user_id),
-                status = PresenceStatus.AWAY.value,
-                last_seen = datetime.now(UTC).isoformat()
+                user_id=str(user_id),
+                status=PresenceStatus.AWAY.value,
+                last_seen=datetime.now(UTC).isoformat(),
             )
             logger.debug("User %s is now away", user_id)
         except Exception as e:
@@ -71,11 +72,7 @@ class PresenceService:
         try:
             last_seen = datetime.now(UTC).isoformat()
             await surreal_db.db.merge(
-                f"presence:`{user_id}`",
-                {
-                    "last_seen": last_seen,
-                    "updated_at": "time::now()"
-                }
+                f"presence:`{user_id}`", {"last_seen": last_seen, "updated_at": "time::now()"}
             )
             logger.debug("Updated last seen for user %s", user_id)
         except Exception as e:
@@ -93,24 +90,20 @@ class PresenceService:
                 return {
                     "user_id": str(user_id),
                     "status": PresenceStatus.OFFLINE.value,
-                    "last_seen": datetime.now(UTC).isoformat()
+                    "last_seen": datetime.now(UTC).isoformat(),
                 }
 
             return {
-                "user_id": result.get("user_id",
-                                      str(user_id)),
-                "status": result.get("status",
-                                     PresenceStatus.OFFLINE.value),
-                "last_seen":
-                result.get("last_seen",
-                           datetime.now(UTC).isoformat())
+                "user_id": result.get("user_id", str(user_id)),
+                "status": result.get("status", PresenceStatus.OFFLINE.value),
+                "last_seen": result.get("last_seen", datetime.now(UTC).isoformat()),
             }
         except Exception as e:
             logger.error("Failed to get presence for user %s: %s", user_id, e)
             return {
                 "user_id": str(user_id),
                 "status": PresenceStatus.OFFLINE.value,
-                "last_seen": datetime.now(UTC).isoformat()
+                "last_seen": datetime.now(UTC).isoformat(),
             }
 
     async def get_room_online_users(self, room_id: str) -> list[dict]:
@@ -124,41 +117,30 @@ class PresenceService:
                 {
                     "user_id": p.user_id,
                     "status": p.status,
-                    "last_seen": p.last_seen.isoformat()
-                } for p in presence_list
+                    "last_seen": p.last_seen.isoformat(),
+                }
+                for p in presence_list
             ]
         except Exception as e:
             logger.error("Failed to get online users for room %s: %s", room_id, e)
             return []
 
-    async def bulk_update_presence(
-        self,
-        user_ids: list[UUID],
-        status: PresenceStatus
-    ) -> None:
+    async def bulk_update_presence(self, user_ids: list[UUID], status: PresenceStatus) -> None:
         """
         Update presence status for multiple users at once
         """
         for user_id in user_ids:
             try:
                 await surreal_db.update_presence(
-                    user_id = str(user_id),
-                    status = status.value,
-                    last_seen = datetime.now(UTC).isoformat()
+                    user_id=str(user_id),
+                    status=status.value,
+                    last_seen=datetime.now(UTC).isoformat(),
                 )
             except Exception as e:
-                logger.error(
-                    "Failed to bulk update presence for %s: %s",
-                    user_id,
-                    e
-                )
+                logger.error("Failed to bulk update presence for %s: %s", user_id, e)
                 continue
 
-        logger.info(
-            "Bulk updated presence for %s users to %s",
-            len(user_ids),
-            status.value
-        )
+        logger.info("Bulk updated presence for %s users to %s", len(user_ids), status.value)
 
 
 presence_service = PresenceService()

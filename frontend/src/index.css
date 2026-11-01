@@ -1,34 +1,41 @@
-@import url('https://fonts.googleapis.com/css2?family=Jersey+10&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Jersey+10&display=swap");
 @import "tailwindcss";
 
 @theme {
-  --color-black: #000000;
-  --color-orange: #FF5300;
-  --color-white: #FFFFFF;
-  --color-gray: #808080;
-  --color-dark-gray: #333333;
-  --color-light-gray: #CCCCCC;
+  --color-black: #020612;
+  --color-navy: #0b1b3d;
+  --color-navy-dark: #071228;
+  --color-orange: #1d6ee5;
+  --color-plum: #1d6ee5;
+  --color-plum-light: #38bdf8;
+  --color-plum-dark: #0c254d;
+  --color-plum-dim: #0a1938;
+  --color-white: #e6f1ff;
+  --color-gray: #64748b;
+  --color-dark-gray: #1e293b;
+  --color-light-gray: #94a3b8;
 
-  --color-success: #228B22;
-  --color-error: #8B0000;
-  --color-info: #4B0082;
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --color-info: #0284c7;
 
-  --color-online: #228B22;
-  --color-away: #B8860B;
-  --color-offline: #808080;
+  --color-online: #10b981;
+  --color-away: #f59e0b;
+  --color-offline: #64748b;
 
   --font-pixel: "Press Start 2P", "Courier New", monospace;
   --font-placeholder: "Jersey 10", sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
 
-  --shadow-pixel: 4px 4px 0 var(--color-orange);
-  --shadow-pixel-sm: 2px 2px 0 var(--color-orange);
-  --shadow-pixel-dark: 4px 4px 0 var(--color-dark-gray);
+  --shadow-pixel: 3px 3px 0 var(--color-plum-dark, #0c254d);
+  --shadow-pixel-sm: 2px 2px 0 var(--color-plum-dark, #0c254d);
+  --shadow-pixel-dark: 3px 3px 0 var(--color-dark-gray);
 }
 
 @font-face {
   font-family: "Press Start 2P";
-  src: url("https://fonts.gstatic.com/s/pressstart2p/v15/e3t4euO8T-267oIAQAu6jDQyK3nVivM.woff2") format("woff2");
+  src: url("https://fonts.gstatic.com/s/pressstart2p/v15/e3t4euO8T-267oIAQAu6jDQyK3nVivM.woff2")
+    format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -134,7 +141,9 @@ a:hover {
 .pixel-button {
   border: 2px solid var(--color-orange);
   box-shadow: var(--shadow-pixel);
-  transition: transform 0.05s steps(1), box-shadow 0.05s steps(1);
+  transition:
+    transform 0.05s steps(1),
+    box-shadow 0.05s steps(1);
 }
 
 .pixel-button:hover {
@@ -196,13 +205,27 @@ a:hover {
   box-shadow: var(--shadow-pixel-dark);
 }
 
-.text-pixel-xs { font-size: 8px; }
-.text-pixel-sm { font-size: 10px; }
-.text-pixel-base { font-size: 12px; }
-.text-pixel-lg { font-size: 14px; }
-.text-pixel-xl { font-size: 16px; }
-.text-pixel-2xl { font-size: 20px; }
-.text-pixel-3xl { font-size: 24px; }
+.text-pixel-xs {
+  font-size: 8px;
+}
+.text-pixel-sm {
+  font-size: 10px;
+}
+.text-pixel-base {
+  font-size: 12px;
+}
+.text-pixel-lg {
+  font-size: 14px;
+}
+.text-pixel-xl {
+  font-size: 16px;
+}
+.text-pixel-2xl {
+  font-size: 20px;
+}
+.text-pixel-3xl {
+  font-size: 24px;
+}
 
 .animate-blink {
   animation: blink 1s steps(1) infinite;
@@ -253,75 +276,170 @@ a:hover {
 }
 
 @keyframes blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 @keyframes pulse-pixel {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @keyframes bounce-pixel {
-  0%, 100% { transform: translateY(0); }
-  33% { transform: translateY(-4px); }
-  66% { transform: translateY(-2px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  33% {
+    transform: translateY(-4px);
+  }
+  66% {
+    transform: translateY(-2px);
+  }
 }
 
 @keyframes typing-dots {
-  0% { content: ""; }
-  25% { content: "."; }
-  50% { content: ".."; }
-  75% { content: "..."; }
+  0% {
+    content: "";
+  }
+  25% {
+    content: ".";
+  }
+  50% {
+    content: "..";
+  }
+  75% {
+    content: "...";
+  }
 }
 
 @keyframes spin-pixel {
-  0% { transform: rotate(0deg); }
-  12.5% { transform: rotate(45deg); }
-  25% { transform: rotate(90deg); }
-  37.5% { transform: rotate(135deg); }
-  50% { transform: rotate(180deg); }
-  62.5% { transform: rotate(225deg); }
-  75% { transform: rotate(270deg); }
-  87.5% { transform: rotate(315deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  12.5% {
+    transform: rotate(45deg);
+  }
+  25% {
+    transform: rotate(90deg);
+  }
+  37.5% {
+    transform: rotate(135deg);
+  }
+  50% {
+    transform: rotate(180deg);
+  }
+  62.5% {
+    transform: rotate(225deg);
+  }
+  75% {
+    transform: rotate(270deg);
+  }
+  87.5% {
+    transform: rotate(315deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes slide-in-right {
-  0% { transform: translateX(100%); opacity: 0; }
-  33% { transform: translateX(66%); opacity: 0.33; }
-  66% { transform: translateX(33%); opacity: 0.66; }
-  100% { transform: translateX(0); opacity: 1; }
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  33% {
+    transform: translateX(66%);
+    opacity: 0.33;
+  }
+  66% {
+    transform: translateX(33%);
+    opacity: 0.66;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes slide-in-up {
-  0% { transform: translateY(100%); opacity: 0; }
-  33% { transform: translateY(66%); opacity: 0.33; }
-  66% { transform: translateY(33%); opacity: 0.66; }
-  100% { transform: translateY(0); opacity: 1; }
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  33% {
+    transform: translateY(66%);
+    opacity: 0.33;
+  }
+  66% {
+    transform: translateY(33%);
+    opacity: 0.66;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  50% { transform: translateX(4px); }
-  75% { transform: translateX(-4px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+  75% {
+    transform: translateX(-4px);
+  }
 }
 
 @keyframes pixel-pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.2; }
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.2;
+  }
 }
 
 @keyframes fade-in {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 @keyframes scale-in {
-  0% { transform: scale(0.95); opacity: 0; }
-  50% { transform: scale(0.98); opacity: 0.5; }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(0.98);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .scrollbar-pixel::-webkit-scrollbar {
@@ -347,44 +465,179 @@ a:hover {
   background: var(--color-black);
 }
 
-.status-online { color: var(--color-online); }
-.status-away { color: var(--color-away); }
-.status-offline { color: var(--color-offline); }
-.status-error { color: var(--color-error); }
-.status-success { color: var(--color-success); }
-.status-info { color: var(--color-info); }
+.status-online {
+  color: var(--color-online);
+}
+.status-away {
+  color: var(--color-away);
+}
+.status-offline {
+  color: var(--color-offline);
+}
+.status-error {
+  color: var(--color-error);
+}
+.status-success {
+  color: var(--color-success);
+}
+.status-info {
+  color: var(--color-info);
+}
 
-.bg-status-online { background-color: var(--color-online); }
-.bg-status-away { background-color: var(--color-away); }
-.bg-status-offline { background-color: var(--color-offline); }
-.bg-status-error { background-color: var(--color-error); }
-.bg-status-success { background-color: var(--color-success); }
-.bg-status-info { background-color: var(--color-info); }
+.bg-status-online {
+  background-color: var(--color-online);
+}
+.bg-status-away {
+  background-color: var(--color-away);
+}
+.bg-status-offline {
+  background-color: var(--color-offline);
+}
+.bg-status-error {
+  background-color: var(--color-error);
+}
+.bg-status-success {
+  background-color: var(--color-success);
+}
+.bg-status-info {
+  background-color: var(--color-info);
+}
 
 @media (min-width: 768px) {
   html {
-    font-size: 12px;
+    font-size: 10px;
   }
-
-  .text-pixel-xs { font-size: 10px; }
-  .text-pixel-sm { font-size: 12px; }
-  .text-pixel-base { font-size: 14px; }
-  .text-pixel-lg { font-size: 16px; }
-  .text-pixel-xl { font-size: 18px; }
-  .text-pixel-2xl { font-size: 22px; }
-  .text-pixel-3xl { font-size: 28px; }
 }
 
 @media (min-width: 1024px) {
   html {
-    font-size: 14px;
+    font-size: 10px;
   }
+}
 
-  .text-pixel-xs { font-size: 11px; }
-  .text-pixel-sm { font-size: 13px; }
-  .text-pixel-base { font-size: 15px; }
-  .text-pixel-lg { font-size: 18px; }
-  .text-pixel-xl { font-size: 20px; }
-  .text-pixel-2xl { font-size: 24px; }
-  .text-pixel-3xl { font-size: 32px; }
+/* =========================================
+   CRYPTLINK TACTICAL MILITARY HUD EXTENSIONS
+   Navy Blue & Neon Navy Blue (Dim Brightness)
+   with Subtle Cyberpunk Accents
+   ========================================= */
+
+.tactical-grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(29, 110, 229, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(29, 110, 229, 0.08) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.tactical-scanlines {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0) 50%,
+    rgba(2, 6, 18, 0.45) 50%,
+    rgba(2, 6, 18, 0.45)
+  );
+  background-size: 100% 4px;
+}
+
+.hazard-stripes-plum {
+  background: repeating-linear-gradient(
+    -45deg,
+    #0c254d,
+    #0c254d 8px,
+    #050d1c 8px,
+    #050d1c 16px
+  );
+}
+
+.hazard-stripes-warning {
+  background: repeating-linear-gradient(
+    -45deg,
+    #1d6ee5,
+    #1d6ee5 8px,
+    #020612 8px,
+    #020612 16px
+  );
+}
+
+.tactical-corners {
+  position: relative;
+}
+
+.tactical-corners::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 6px;
+  height: 6px;
+  border-top: 2px solid var(--color-orange, #1d6ee5);
+  border-left: 2px solid var(--color-orange, #1d6ee5);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.tactical-corners::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 6px;
+  height: 6px;
+  border-bottom: 2px solid var(--color-orange, #1d6ee5);
+  border-right: 2px solid var(--color-orange, #1d6ee5);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.tactical-badge-mil {
+  background-color: #0a1938;
+  border: 1px solid var(--color-orange, #1d6ee5);
+  color: #38bdf8;
+  letter-spacing: 0.05em;
+  font-family: var(--font-pixel);
+  text-transform: uppercase;
+}
+
+@keyframes radar-sweep {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-radar-sweep {
+  animation: radar-sweep 4s linear infinite;
+  transform-origin: center center;
+}
+
+@keyframes defcon-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.94);
+  }
+}
+
+.animate-defcon {
+  animation: defcon-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes mil-blip {
+  0%,
+  100% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.animate-mil-blip {
+  animation: mil-blip 1s steps(2) infinite;
 }

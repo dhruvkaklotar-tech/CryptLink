@@ -3,9 +3,9 @@
 // index.ts
 // ===================
 
-export * from './crypto-service'
-export * from './double-ratchet'
-export * from './key-store'
+export * from "./crypto-service";
+export * from "./double-ratchet";
+export * from "./key-store";
 export {
   clearAllMessages,
   clearRoomMessages,
@@ -17,6 +17,8 @@ export {
   saveDecryptedMessage,
   saveDecryptedMessages,
   updateMessageId,
-} from './message-store'
-export * from './primitives'
-export * from './x3dh'
+} from "./message-store";
+export * from "./primitives";
+export * from "./safety-number";
+export * from "./vault-service";
+export * from "./x3dh";

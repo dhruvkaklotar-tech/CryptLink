@@ -28,6 +28,7 @@ class RedisManager:
     """
     Redis manager for WebAuthn challenges and session tokens
     """
+
     def __init__(self) -> None:
         """
         Initialize Redis manager with connection pool
@@ -44,10 +45,10 @@ class RedisManager:
 
         self.pool = redis.ConnectionPool.from_url(
             str(settings.REDIS_URL),
-            max_connections = 50,
-            decode_responses = False,
+            max_connections=50,
+            decode_responses=False,
         )
-        self.client = redis.Redis(connection_pool = self.pool)
+        self.client = redis.Redis(connection_pool=self.pool)
 
         await self.client.ping()
         logger.info("Connected to Redis at %s", settings.REDIS_URL)
@@ -129,7 +130,7 @@ class RedisManager:
         """
         client = self._require_client()
         key = f"{AUTH_CHALLENGE_PREFIX}{bytes_to_base64url(challenge)}"
-        await client.set(key, b"1", ex = ttl, nx = True)
+        await client.set(key, b"1", ex=ttl, nx=True)
         logger.debug(
             "Stored authentication challenge with %ss TTL",
             ttl,

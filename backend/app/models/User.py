@@ -20,36 +20,27 @@ if TYPE_CHECKING:
     from app.models.Credential import Credential
 
 
-class User(BaseDBModel, table = True):
+class User(BaseDBModel, table=True):
     """
     User account with WebAuthn passkey authentication
     """
+
     __tablename__ = "users"
 
-    id: UUID = Field(
-        default_factory = uuid4,
-        primary_key = True,
-        nullable = False
-    )
+    id: UUID = Field(default_factory=uuid4, primary_key=True, nullable=False)
     username: str = Field(
-        unique = True,
-        index = True,
-        nullable = False,
-        max_length = USERNAME_MAX_LENGTH
+        unique=True, index=True, nullable=False, max_length=USERNAME_MAX_LENGTH
     )
-    display_name: str = Field(
-        nullable = False,
-        max_length = DISPLAY_NAME_MAX_LENGTH
-    )
-    is_active: bool = Field(default = True, nullable = False)
-    is_verified: bool = Field(default = False, nullable = False)
+    display_name: str = Field(nullable=False, max_length=DISPLAY_NAME_MAX_LENGTH)
+    is_active: bool = Field(default=True, nullable=False)
+    is_verified: bool = Field(default=False, nullable=False)
 
     webauthn_user_handle: bytes = Field(
-        nullable = False,
-        max_length = 64,
+        nullable=False,
+        max_length=64,
     )
 
-    credentials: list["Credential"] = Relationship(back_populates = "user")
+    credentials: list["Credential"] = Relationship(back_populates="user")
 
     def __repr__(self) -> str:
         """

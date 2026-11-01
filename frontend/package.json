@@ -1,7 +1,7 @@
 {
-  "name": "encrypted-p2p-chat-frontend",
+  "name": "cryptlink",
   "version": "1.0.0",
-  "description": "End-to-end encrypted P2P chat frontend with SolidJS",
+  "description": "CryptLink - High-Assurance End-to-End Encrypted P2P Communications",
   "type": "module",
   "scripts": {
     "dev": "vite",

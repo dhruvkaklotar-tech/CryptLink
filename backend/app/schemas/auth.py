@@ -23,6 +23,7 @@ class RegistrationOptionsResponse(BaseModel):
     """
     WebAuthn registration options returned to client
     """
+
     options: dict[str, Any]
     challenge: bytes
 
@@ -31,6 +32,7 @@ class VerifiedRegistration(BaseModel):
     """
     Verified WebAuthn registration data
     """
+
     credential_id: bytes
     credential_public_key: bytes
     sign_count: int
@@ -49,6 +51,7 @@ class AuthenticationOptionsResponse(BaseModel):
     """
     WebAuthn authentication options returned to client
     """
+
     options: dict[str, Any]
     challenge: bytes
 
@@ -57,6 +60,7 @@ class VerifiedAuthentication(BaseModel):
     """
     Verified WebAuthn authentication data
     """
+
     new_sign_count: int
     credential_id: bytes
     user_verified: bool
@@ -68,13 +72,15 @@ class RegistrationBeginRequest(BaseModel):
     """
     Request to begin passkey registration
     """
+
     username: str = Field(
-        min_length = USERNAME_MIN_LENGTH,
-        max_length = USERNAME_MAX_LENGTH,
+        min_length=USERNAME_MIN_LENGTH,
+        max_length=USERNAME_MAX_LENGTH,
     )
-    display_name: str = Field(
-        min_length = DISPLAY_NAME_MIN_LENGTH,
-        max_length = DISPLAY_NAME_MAX_LENGTH,
+    display_name: str | None = Field(
+        default=None,
+        min_length=DISPLAY_NAME_MIN_LENGTH,
+        max_length=DISPLAY_NAME_MAX_LENGTH,
     )
 
 
@@ -82,11 +88,12 @@ class RegistrationCompleteRequest(BaseModel):
     """
     Request to complete passkey registration
     """
-    username: str = Field(min_length = USERNAME_MIN_LENGTH, max_length = USERNAME_MAX_LENGTH)
+
+    username: str = Field(min_length=USERNAME_MIN_LENGTH, max_length=USERNAME_MAX_LENGTH)
     credential: dict[str, Any]
     device_name: str | None = Field(
-        default = None,
-        max_length = DEVICE_NAME_MAX_LENGTH,
+        default=None,
+        max_length=DEVICE_NAME_MAX_LENGTH,
     )
 
 
@@ -94,10 +101,11 @@ class AuthenticationBeginRequest(BaseModel):
     """
     Request to begin passkey authentication
     """
+
     username: str | None = Field(
-        default = None,
-        min_length = USERNAME_MIN_LENGTH,
-        max_length = USERNAME_MAX_LENGTH,
+        default=None,
+        min_length=USERNAME_MIN_LENGTH,
+        max_length=USERNAME_MAX_LENGTH,
     )
 
 
@@ -105,6 +113,7 @@ class AuthenticationCompleteRequest(BaseModel):
     """
     Request to complete passkey authentication
     """
+
     credential: dict[str, Any]
 
 
@@ -112,6 +121,7 @@ class UserResponse(BaseModel):
     """
     User data response
     """
+
     id: str
     username: str
     display_name: str
@@ -124,14 +134,15 @@ class UserSearchRequest(BaseModel):
     """
     Request to search for users
     """
+
     query: str = Field(
-        min_length = USER_SEARCH_MIN_LENGTH,
-        max_length = USERNAME_MAX_LENGTH,
+        min_length=USER_SEARCH_MIN_LENGTH,
+        max_length=USERNAME_MAX_LENGTH,
     )
     limit: int = Field(
-        default = USER_SEARCH_DEFAULT_LIMIT,
-        ge = 1,
-        le = USER_SEARCH_MAX_LIMIT,
+        default=USER_SEARCH_DEFAULT_LIMIT,
+        ge=1,
+        le=USER_SEARCH_MAX_LIMIT,
     )
 
 
@@ -139,4 +150,5 @@ class UserSearchResponse(BaseModel):
     """
     Response containing search results
     """
+
     users: list[UserResponse]

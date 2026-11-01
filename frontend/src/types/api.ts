@@ -8,30 +8,30 @@ export class ApiError extends Error {
     public data: unknown,
     message?: string
   ) {
-    super(message ?? `API Error: ${status}`)
-    this.name = 'ApiError'
+    super(message ?? `API Error: ${status}`);
+    this.name = "ApiError";
   }
 }
 
 export interface ApiResponse<T> {
-  data: T
-  status: number
+  data: T;
+  status: number;
 }
 
 export interface PaginatedResponse<T> {
-  items: T[]
-  total: number
-  page: number
-  pageSize: number
-  hasMore: boolean
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
 }
 
 export interface ValidationError {
-  field: string
-  message: string
+  field: string;
+  message: string;
 }
 
 export interface ApiErrorResponse {
-  detail: string | ValidationError[]
-  status_code?: number
+  detail: string | ValidationError[];
+  status_code?: number;
 }

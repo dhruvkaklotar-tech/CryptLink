@@ -10,6 +10,7 @@ class RootResponse(BaseModel):
     """
     Root endpoint response schema
     """
+
     app: str
     version: str
     status: str
@@ -20,4 +21,5 @@ class HealthResponse(BaseModel):
     """
     Health check endpoint response schema
     """
+
     status: str

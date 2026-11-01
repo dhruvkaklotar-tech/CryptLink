@@ -31,18 +31,18 @@ async def issue_session(response: Response, user: User) -> str:
     """
     token = secrets.token_urlsafe(SESSION_TOKEN_BYTES)
     await redis_manager.create_session(
-        token = token,
-        user_id = str(user.id),
-        ttl = SESSION_TTL_SECONDS,
+        token=token,
+        user_id=str(user.id),
+        ttl=SESSION_TTL_SECONDS,
     )
     response.set_cookie(
-        key = SESSION_COOKIE_NAME,
-        value = token,
-        max_age = SESSION_TTL_SECONDS,
-        httponly = True,
-        secure = settings.is_production,
-        samesite = "lax",
-        path = "/",
+        key=SESSION_COOKIE_NAME,
+        value=token,
+        max_age=SESSION_TTL_SECONDS,
+        httponly=True,
+        secure=settings.is_production,
+        samesite="lax",
+        path="/",
     )
     return token
 
@@ -54,13 +54,13 @@ async def revoke_session(response: Response, token: str | None) -> None:
     if token:
         await redis_manager.delete_session(token)
     response.delete_cookie(
-        key = SESSION_COOKIE_NAME,
-        path = "/",
+        key=SESSION_COOKIE_NAME,
+        path="/",
     )
 
 
 async def current_user(
-    chat_session: str | None = Cookie(default = None, alias = SESSION_COOKIE_NAME),
+    chat_session: str | None = Cookie(default=None, alias=SESSION_COOKIE_NAME),
     session: AsyncSession = Depends(get_session),
 ) -> User:
     """
@@ -68,15 +68,15 @@ async def current_user(
     """
     if not chat_session:
         raise HTTPException(
-            status_code = status.HTTP_401_UNAUTHORIZED,
-            detail = "Not authenticated",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
         )
 
     user_id_str = await redis_manager.get_session_user(chat_session)
     if user_id_str is None:
         raise HTTPException(
-            status_code = status.HTTP_401_UNAUTHORIZED,
-            detail = "Session expired or invalid",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired or invalid",
         )
 
     try:
@@ -84,22 +84,22 @@ async def current_user(
     except ValueError as exc:
         logger.error("Corrupt session payload for token: %s", exc)
         raise HTTPException(
-            status_code = status.HTTP_401_UNAUTHORIZED,
-            detail = "Session expired or invalid",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired or invalid",
         ) from exc
 
-    user = await auth_service.get_user_by_id(session = session, user_id = user_id)
+    user = await auth_service.get_user_by_id(session=session, user_id=user_id)
     if user is None or not user.is_active:
         raise HTTPException(
-            status_code = status.HTTP_401_UNAUTHORIZED,
-            detail = "Session expired or invalid",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired or invalid",
         )
 
     return user
 
 
 async def session_token_from_cookie(
-    chat_session: str | None = Cookie(default = None, alias = SESSION_COOKIE_NAME),
+    chat_session: str | None = Cookie(default=None, alias=SESSION_COOKIE_NAME),
 ) -> str | None:
     """
     Pass-through dependency to read the session cookie value

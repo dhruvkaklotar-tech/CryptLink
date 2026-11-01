@@ -2,13 +2,13 @@
 // © AngelaMos | 2026
 // index.tsx
 // ===================
-import { Router } from '@solidjs/router'
-import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
-import { render } from 'solid-js/web'
-import App from './App'
-import { ToastContainer } from './components/UI/Toast'
-import './index.css'
-import { authService } from './services'
+import { Router } from "@solidjs/router";
+import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
+import { render } from "solid-js/web";
+import App from "./App";
+import { ToastContainer } from "./components/UI/Toast";
+import "./index.css";
+import { authService } from "./services";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,15 +18,15 @@ const queryClient = new QueryClient({
       staleTime: 5 * 60 * 1000,
     },
   },
-})
+});
 
-const root = document.getElementById('root')
+const root = document.getElementById("root");
 
 if (root === null) {
-  throw new Error('Root element not found')
+  throw new Error("Root element not found");
 }
 
-void authService.rehydrateSession()
+void authService.rehydrateSession();
 
 render(
   () => (
@@ -38,4 +38,4 @@ render(
     </QueryClientProvider>
   ),
   root
-)
+);

@@ -10,6 +10,7 @@ class MessageStatus(StrEnum):
     """
     Message delivery status
     """
+
     SENDING = "sending"
     SENT = "sent"
     DELIVERED = "delivered"
@@ -21,6 +22,7 @@ class PresenceStatus(StrEnum):
     """
     User presence status
     """
+
     ONLINE = "online"
     AWAY = "away"
     OFFLINE = "offline"
@@ -30,6 +32,7 @@ class RoomType(StrEnum):
     """
     Chat room types
     """
+
     DIRECT = "direct"
     GROUP = "group"
     EPHEMERAL = "ephemeral"

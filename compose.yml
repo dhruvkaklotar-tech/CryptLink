@@ -74,7 +74,7 @@ services:
       SURREAL_PASSWORD: ${SURREAL_PASSWORD}
       REDIS_URL: redis://redis:6379
       RP_ID: ${RP_ID:-localhost}
-      RP_NAME: ${RP_NAME:-Encrypted P2P Chat}
+      RP_NAME: ${RP_NAME:-CryptLink}
       RP_ORIGIN: ${RP_ORIGIN:-https://localhost}
     expose:
       - "8000"

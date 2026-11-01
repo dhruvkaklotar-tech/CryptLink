@@ -1,10 +1,15 @@
-# Environment
-/.env
-.env.local
-backend/.env
-frontend/.env
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.cert
+*.pfx
+*.p12
 
-# Python build artifacts (paths anchored to backend so frontend/src/lib stays tracked)
+# Python build artifacts
 __pycache__/
 *.py[cod]
 *$py.class
@@ -29,42 +34,48 @@ backend/.venv/
 backend/ENV/
 backend/env/
 
-# Testing
+# Testing & Coverage
 .pytest_cache/
 .coverage
 htmlcov/
 .mypy_cache/
 .ruff_cache/
 
-# IDE
+# IDE & Editor
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# Logs
+# Logs & Temporary Scratch
 *.log
 logs/
+scratch/
+.anchor
 
 # Docker
 docker-compose.override.yml
 
-# Database
+# Databases & Backups
 *.db
 *.sqlite
 *.sqlite3
+*.dump
+*.sql.gz
 
-# macOS
+# OS Artifacts
 .DS_Store
+Thumbs.db
+desktop.ini
 
-# Node
+# Node & Frontend
 node_modules/
 .pnpm-store/
 dist/
 .solid/
 
-# Nginx
+# Nginx & TLS
 nginx/ssl/
 
 # AI handoff documentation

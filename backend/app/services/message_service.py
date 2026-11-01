@@ -26,6 +26,7 @@ class MessageService:
     """
     Pass-through message storage service for client-encrypted messages
     """
+
     async def store_encrypted_message(
         self,
         session: AsyncSession,
@@ -61,11 +62,7 @@ class MessageService:
 
         try:
             result = await surreal_db.create_message(surreal_message)
-            logger.info(
-                "Stored client-encrypted message: %s -> %s",
-                sender_id,
-                recipient_id
-            )
+            logger.info("Stored client-encrypted message: %s -> %s", sender_id, recipient_id)
             return result
         except Exception as e:
             logger.error("Failed to store encrypted message: %s", e)

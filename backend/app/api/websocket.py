@@ -14,7 +14,7 @@ from fastapi import (
     WebSocketDisconnect,
 )
 
-from app.config import SESSION_COOKIE_NAME
+from app.config import SESSION_COOKIE_NAME, settings
 from app.core.redis_manager import redis_manager
 from app.core.websocket_manager import connection_manager
 from app.services.websocket_service import websocket_service
@@ -22,27 +22,43 @@ from app.services.websocket_service import websocket_service
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix = "/ws", tags = ["websocket"])
+router = APIRouter(prefix="/ws", tags=["websocket"])
 
 
 async def _resolve_user(websocket: WebSocket) -> UUID | None:
     """
-    Resolve the authenticated user from the session cookie or close the socket
+    Resolve the authenticated user from the session cookie or query parameter, with CSWSH protection
     """
-    token = websocket.cookies.get(SESSION_COOKIE_NAME)
+    origin = websocket.headers.get("origin")
+    if origin:
+        allowed = (
+            any(origin.startswith(o.rstrip("/")) for o in settings.CORS_ORIGINS)
+            or origin.startswith("http://localhost:")
+            or origin.startswith("https://localhost:")
+            or origin.startswith("http://127.0.0.1:")
+            or origin.startswith("https://127.0.0.1:")
+            or origin == "http://localhost"
+            or origin == "http://127.0.0.1"
+        )
+        if not allowed:
+            logger.warning("CSWSH attempt blocked: unauthorized origin %s", origin)
+            await websocket.close(code=4403, reason="Origin not allowed")
+            return None
+
+    token = websocket.cookies.get(SESSION_COOKIE_NAME) or websocket.query_params.get("token")
     if not token:
-        await websocket.close(code = 4401, reason = "Not authenticated")
+        await websocket.close(code=4401, reason="Not authenticated")
         return None
 
     user_id_str = await redis_manager.get_session_user(token)
     if user_id_str is None:
-        await websocket.close(code = 4401, reason = "Session expired")
+        await websocket.close(code=4401, reason="Session expired")
         return None
 
     try:
         return UUID(user_id_str)
     except ValueError:
-        await websocket.close(code = 4401, reason = "Invalid session")
+        await websocket.close(code=4401, reason="Invalid session")
         return None
 
 
@@ -62,6 +78,20 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     try:
         while True:
             data = await websocket.receive_text()
+            if len(data) > 1_000_000:
+                logger.warning(
+                    "Giant WebSocket payload (%d bytes) rejected from user %s",
+                    len(data),
+                    user_uuid,
+                )
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "error_code": "payload_too_large",
+                        "error_message": "Payload exceeds maximum allowed size (1MB)",
+                    }
+                )
+                continue
 
             try:
                 message = json.loads(data)

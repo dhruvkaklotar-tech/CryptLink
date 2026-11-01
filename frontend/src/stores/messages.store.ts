@@ -3,50 +3,50 @@
  * Manages message cache per room
  */
 
-import { computed, map } from 'nanostores'
-import type { Message, MessageStatus } from '../types'
-import { $activeRoomId } from './rooms.store'
+import { computed, map } from "nanostores";
+import type { Message, MessageStatus } from "../types";
+import { $activeRoomId } from "./rooms.store";
 
-export const $messagesByRoom = map<Record<string, Message[]>>({})
+export const $messagesByRoom = map<Record<string, Message[]>>({});
 
-export const $pendingMessages = map<Record<string, Message[]>>({})
+export const $pendingMessages = map<Record<string, Message[]>>({});
 
-export const $hasMoreByRoom = map<Record<string, boolean>>({})
+export const $hasMoreByRoom = map<Record<string, boolean>>({});
 
-export const $oldestMessageIdByRoom = map<Record<string, string | undefined>>({})
+export const $oldestMessageIdByRoom = map<Record<string, string | undefined>>({});
 
 export const $activeRoomMessages = computed(
   [$messagesByRoom, $activeRoomId],
   (messages, roomId) => (roomId ? (messages[roomId] ?? []) : [])
-)
+);
 
 export const $activeRoomPendingMessages = computed(
   [$pendingMessages, $activeRoomId],
   (pending, roomId) => (roomId ? (pending[roomId] ?? []) : [])
-)
+);
 
 export function addMessage(roomId: string, message: Message): void {
-  const messages = $messagesByRoom.get()[roomId] ?? []
-  const exists = messages.some((m) => m.id === message.id)
+  const messages = $messagesByRoom.get()[roomId] ?? [];
+  const exists = messages.some((m) => m.id === message.id);
 
   if (!exists) {
-    $messagesByRoom.setKey(roomId, [...messages, message])
+    $messagesByRoom.setKey(roomId, [...messages, message]);
   }
 }
 
 export function prependMessages(roomId: string, newMessages: Message[]): void {
-  const existing = $messagesByRoom.get()[roomId] ?? []
-  const existingIds = new Set(existing.map((m) => m.id))
-  const uniqueNew = newMessages.filter((m) => !existingIds.has(m.id))
+  const existing = $messagesByRoom.get()[roomId] ?? [];
+  const existingIds = new Set(existing.map((m) => m.id));
+  const uniqueNew = newMessages.filter((m) => !existingIds.has(m.id));
 
   if (uniqueNew.length > 0) {
-    $messagesByRoom.setKey(roomId, [...uniqueNew, ...existing])
+    $messagesByRoom.setKey(roomId, [...uniqueNew, ...existing]);
 
     if (uniqueNew.length > 0) {
       const oldest = uniqueNew.reduce((a, b) =>
         new Date(a.created_at) < new Date(b.created_at) ? a : b
-      )
-      $oldestMessageIdByRoom.setKey(roomId, oldest.id)
+      );
+      $oldestMessageIdByRoom.setKey(roomId, oldest.id);
     }
   }
 }
@@ -56,15 +56,15 @@ export function updateMessageStatus(
   messageId: string,
   status: MessageStatus
 ): void {
-  const messages = $messagesByRoom.get()[roomId]
-  if (messages === undefined) return
+  const messages = $messagesByRoom.get()[roomId];
+  if (messages === undefined) return;
 
-  const index = messages.findIndex((m) => m.id === messageId)
-  if (index === -1) return
+  const index = messages.findIndex((m) => m.id === messageId);
+  if (index === -1) return;
 
-  const updated = [...messages]
-  updated[index] = { ...updated[index], status }
-  $messagesByRoom.setKey(roomId, updated)
+  const updated = [...messages];
+  updated[index] = { ...updated[index], status };
+  $messagesByRoom.setKey(roomId, updated);
 }
 
 export function updateMessageContent(
@@ -72,28 +72,28 @@ export function updateMessageContent(
   messageId: string,
   content: string
 ): void {
-  const messages = $messagesByRoom.get()[roomId]
-  if (messages === undefined) return
+  const messages = $messagesByRoom.get()[roomId];
+  if (messages === undefined) return;
 
-  const index = messages.findIndex((m) => m.id === messageId)
-  if (index === -1) return
+  const index = messages.findIndex((m) => m.id === messageId);
+  if (index === -1) return;
 
-  const updated = [...messages]
-  updated[index] = { ...updated[index], content }
-  $messagesByRoom.setKey(roomId, updated)
+  const updated = [...messages];
+  updated[index] = { ...updated[index], content };
+  $messagesByRoom.setKey(roomId, updated);
 }
 
 export function addPendingMessage(roomId: string, message: Message): void {
-  const pending = $pendingMessages.get()[roomId] ?? []
-  $pendingMessages.setKey(roomId, [...pending, message])
+  const pending = $pendingMessages.get()[roomId] ?? [];
+  $pendingMessages.setKey(roomId, [...pending, message]);
 }
 
 export function removePendingMessage(roomId: string, messageId: string): void {
-  const pending = $pendingMessages.get()[roomId] ?? []
+  const pending = $pendingMessages.get()[roomId] ?? [];
   $pendingMessages.setKey(
     roomId,
     pending.filter((m) => m.id !== messageId)
-  )
+  );
 }
 
 export function confirmPendingMessage(
@@ -101,51 +101,94 @@ export function confirmPendingMessage(
   tempId: string,
   confirmedMessage: Message
 ): void {
-  removePendingMessage(roomId, tempId)
-  addMessage(roomId, confirmedMessage)
+  removePendingMessage(roomId, tempId);
+  addMessage(roomId, confirmedMessage);
+}
+
+export function confirmMessageId(
+  roomId: string,
+  tempId: string,
+  confirmedId: string,
+  status: MessageStatus = "sent"
+): void {
+  removePendingMessage(roomId, tempId);
+  const messages = $messagesByRoom.get()[roomId] ?? [];
+  const updated = messages.map((m) =>
+    m.id === tempId ? { ...m, id: confirmedId, status } : m
+  );
+  $messagesByRoom.setKey(roomId, updated);
 }
 
 export function setRoomMessages(roomId: string, messages: Message[]): void {
-  $messagesByRoom.setKey(roomId, messages)
+  $messagesByRoom.setKey(roomId, messages);
 
   if (messages.length > 0) {
     const oldest = messages.reduce((a, b) =>
       new Date(a.created_at) < new Date(b.created_at) ? a : b
-    )
-    $oldestMessageIdByRoom.setKey(roomId, oldest.id)
+    );
+    $oldestMessageIdByRoom.setKey(roomId, oldest.id);
   }
 }
 
 export function setHasMore(roomId: string, hasMore: boolean): void {
-  $hasMoreByRoom.setKey(roomId, hasMore)
+  $hasMoreByRoom.setKey(roomId, hasMore);
 }
 
 export function getHasMore(roomId: string): boolean {
-  return $hasMoreByRoom.get()[roomId] ?? true
+  return $hasMoreByRoom.get()[roomId] ?? true;
 }
 
 export function getOldestMessageId(roomId: string): string | undefined {
-  return $oldestMessageIdByRoom.get()[roomId]
+  return $oldestMessageIdByRoom.get()[roomId];
 }
 
 export function clearRoomMessages(roomId: string): void {
-  $messagesByRoom.setKey(roomId, [])
-  $pendingMessages.setKey(roomId, [])
-  $hasMoreByRoom.setKey(roomId, true)
-  $oldestMessageIdByRoom.setKey(roomId, undefined)
+  $messagesByRoom.setKey(roomId, []);
+  $pendingMessages.setKey(roomId, []);
+  $hasMoreByRoom.setKey(roomId, true);
+  $oldestMessageIdByRoom.setKey(roomId, undefined);
 }
 
 export function clearAllMessages(): void {
-  $messagesByRoom.set({})
-  $pendingMessages.set({})
-  $hasMoreByRoom.set({})
-  $oldestMessageIdByRoom.set({})
+  $messagesByRoom.set({});
+  $pendingMessages.set({});
+  $hasMoreByRoom.set({});
+  $oldestMessageIdByRoom.set({});
 }
 
-export function getMessageById(
-  roomId: string,
-  messageId: string
-): Message | null {
-  const messages = $messagesByRoom.get()[roomId]
-  return messages?.find((m) => m.id === messageId) ?? null
+export function removeMessage(roomId: string, messageId: string): void {
+  const messages = $messagesByRoom.get()[roomId];
+  if (messages === undefined) return;
+  $messagesByRoom.setKey(
+    roomId,
+    messages.filter((m) => m.id !== messageId)
+  );
+}
+
+export function getMessageById(roomId: string, messageId: string): Message | null {
+  const messages = $messagesByRoom.get()[roomId];
+  return messages?.find((m) => m.id === messageId) ?? null;
+}
+
+export function markRoomMessagesAsSeen(roomId: string, currentUserId: string): void {
+  const messages = $messagesByRoom.get()[roomId];
+  if (!messages || messages.length === 0) return;
+
+  for (const m of messages) {
+    if (m.sender_id !== currentUserId && m.status !== "read") {
+      updateMessageStatus(roomId, m.id, "read");
+      // Send read receipt to sender over WebSocket
+      import("../websocket/websocket-manager").then(({ wsManager }) => {
+        wsManager.sendReadReceipt(m.id, roomId);
+      });
+      // If message is ephemeral, start disappearing timer now that it has been seen
+      if (m.ttl_seconds && m.ttl_seconds > 0) {
+        setTimeout(async () => {
+          const { deleteMessage } = await import("../crypto/message-store");
+          void deleteMessage(m.id);
+          removeMessage(roomId, m.id);
+        }, m.ttl_seconds * 1000);
+      }
+    }
+  }
 }

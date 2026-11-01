@@ -3,45 +3,41 @@
 // MessageList.tsx
 // ===================
 
-import { useStore } from '@nanostores/solid'
-import type { JSX } from 'solid-js'
-import { createEffect, createSignal, For, onMount, Show } from 'solid-js'
-import {
-  $activeRoomMessages,
-  $activeRoomPendingMessages,
-  $userId,
-} from '../../stores'
-import type { Message } from '../../types'
-import { Spinner } from '../UI/Spinner'
-import { MessageBubble } from './MessageBubble'
-import { TypingIndicator } from './TypingIndicator'
+import { useStore } from "@nanostores/solid";
+import type { JSX } from "solid-js";
+import { createEffect, createSignal, For, onMount, Show } from "solid-js";
+import { $activeRoomMessages, $activeRoomPendingMessages, $userId } from "../../stores";
+import type { Message } from "../../types";
+import { Spinner } from "../UI/Spinner";
+import { MessageBubble } from "./MessageBubble";
+import { TypingIndicator } from "./TypingIndicator";
 
 interface MessageListProps {
-  roomId: string
-  onLoadMore?: () => void
-  hasMore?: boolean
-  loading?: boolean
-  class?: string
+  roomId: string;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  loading?: boolean;
+  class?: string;
 }
 
 export function MessageList(props: MessageListProps): JSX.Element {
-  let containerRef: HTMLDivElement | undefined
-  const [autoScroll, setAutoScroll] = createSignal(true)
+  let containerRef: HTMLDivElement | undefined;
+  const [autoScroll, setAutoScroll] = createSignal(true);
 
-  const messages = useStore($activeRoomMessages)
-  const pendingMessages = useStore($activeRoomPendingMessages)
-  const userId = useStore($userId)
+  const messages = useStore($activeRoomMessages);
+  const pendingMessages = useStore($activeRoomPendingMessages);
+  const userId = useStore($userId);
 
   const allMessages = (): Message[] => {
-    return [...messages(), ...pendingMessages()]
-  }
+    return [...messages(), ...pendingMessages()];
+  };
 
   const handleScroll = (): void => {
-    if (containerRef === undefined) return
+    if (containerRef === undefined) return;
 
-    const { scrollTop, scrollHeight, clientHeight } = containerRef
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 50
-    setAutoScroll(isAtBottom)
+    const { scrollTop, scrollHeight, clientHeight } = containerRef;
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+    setAutoScroll(isAtBottom);
 
     if (
       scrollTop < 100 &&
@@ -49,44 +45,44 @@ export function MessageList(props: MessageListProps): JSX.Element {
       props.loading !== true &&
       props.onLoadMore !== undefined
     ) {
-      props.onLoadMore()
+      props.onLoadMore();
     }
-  }
+  };
 
   createEffect(() => {
-    allMessages()
+    allMessages();
     if (autoScroll() && containerRef !== undefined) {
-      containerRef.scrollTop = containerRef.scrollHeight
+      containerRef.scrollTop = containerRef.scrollHeight;
     }
-  })
+  });
 
   onMount(() => {
     if (containerRef !== undefined) {
-      containerRef.scrollTop = containerRef.scrollHeight
+      containerRef.scrollTop = containerRef.scrollHeight;
     }
-  })
+  });
 
   const groupMessagesByDate = (msgs: Message[]): Map<string, Message[]> => {
-    const groups = new Map<string, Message[]>()
+    const groups = new Map<string, Message[]>();
 
     for (const msg of msgs) {
-      const date = new Date(msg.created_at).toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-      })
+      const date = new Date(msg.created_at).toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      });
 
-      const existing = groups.get(date) ?? []
-      groups.set(date, [...existing, msg])
+      const existing = groups.get(date) ?? [];
+      groups.set(date, [...existing, msg]);
     }
 
-    return groups
-  }
+    return groups;
+  };
 
   return (
     <div
       ref={containerRef}
-      class={`flex-1 overflow-y-auto scrollbar-pixel p-4 ${props.class ?? ''}`}
+      class={`scrollbar-pixel flex-1 overflow-y-auto p-4 ${props.class ?? ""}`}
       onScroll={handleScroll}
     >
       <Show when={props.loading}>
@@ -104,13 +100,11 @@ export function MessageList(props: MessageListProps): JSX.Element {
                 <For each={dateMessages}>
                   {(message, index) => {
                     const prevMessage = (): Message | undefined =>
-                      index() > 0 ? dateMessages[index() - 1] : undefined
+                      index() > 0 ? dateMessages[index() - 1] : undefined;
                     const showSender = (): boolean => {
-                      const prev = prevMessage()
-                      return (
-                        prev === undefined || prev.sender_id !== message.sender_id
-                      )
-                    }
+                      const prev = prevMessage();
+                      return prev === undefined || prev.sender_id !== message.sender_id;
+                    };
 
                     return (
                       <MessageBubble
@@ -118,7 +112,7 @@ export function MessageList(props: MessageListProps): JSX.Element {
                         isOwnMessage={message.sender_id === userId()}
                         showSender={showSender()}
                       />
-                    )
+                    );
                   }}
                 </For>
               </div>
@@ -131,31 +125,31 @@ export function MessageList(props: MessageListProps): JSX.Element {
         <TypingIndicator />
       </div>
     </div>
-  )
+  );
 }
 
 function EmptyMessages(): JSX.Element {
   return (
-    <div class="h-full flex flex-col items-center justify-center py-12">
+    <div class="flex h-full flex-col items-center justify-center py-12">
       <MessageIcon />
-      <p class="font-pixel text-[10px] text-gray mt-4">NO MESSAGES YET</p>
-      <p class="font-pixel text-[8px] text-gray mt-1">START THE CONVERSATION</p>
+      <p class="font-pixel text-gray mt-4 text-[10px]">NO MESSAGES YET</p>
+      <p class="font-pixel text-gray mt-1 text-[8px]">START THE CONVERSATION</p>
     </div>
-  )
+  );
 }
 
 interface DateSeparatorProps {
-  date: string
+  date: string;
 }
 
 function DateSeparator(props: DateSeparatorProps): JSX.Element {
   return (
-    <div class="flex items-center gap-4 my-4">
-      <div class="flex-1 h-px bg-dark-gray" />
-      <span class="font-pixel text-[8px] text-gray uppercase">{props.date}</span>
-      <div class="flex-1 h-px bg-dark-gray" />
+    <div class="my-4 flex items-center gap-4">
+      <div class="bg-dark-gray h-px flex-1" />
+      <span class="font-pixel text-gray text-[8px] uppercase">{props.date}</span>
+      <div class="bg-dark-gray h-px flex-1" />
     </div>
-  )
+  );
 }
 
 function MessageIcon(): JSX.Element {
@@ -179,5 +173,5 @@ function MessageIcon(): JSX.Element {
       <rect x="12" y="24" width="16" height="2" />
       <rect x="12" y="30" width="20" height="2" />
     </svg>
-  )
+  );
 }

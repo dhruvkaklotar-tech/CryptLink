@@ -26,7 +26,7 @@ DISPLAY_NAME_MAX_LENGTH = 100
 DEVICE_NAME_MAX_LENGTH = 100
 
 # User search
-USER_SEARCH_MIN_LENGTH = 2
+USER_SEARCH_MIN_LENGTH = 1
 USER_SEARCH_DEFAULT_LIMIT = 10
 USER_SEARCH_MAX_LIMIT = 50
 
@@ -98,16 +98,17 @@ class Settings(BaseSettings):
     """
     Application settings with environment variable support
     """
+
     model_config = SettingsConfigDict(
-        env_file = "../../.env",
-        env_file_encoding = "utf-8",
-        case_sensitive = False,
-        extra = "ignore",
+        env_file="../../.env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
     )
 
     ENV: Literal["development", "production", "testing"] = "development"
     DEBUG: bool = True
-    APP_NAME: str = "encrypted-p2p-chat"
+    APP_NAME: str = "CryptLink"
     SECRET_KEY: str
 
     POSTGRES_HOST: str = "localhost"
@@ -133,7 +134,7 @@ class Settings(BaseSettings):
     REDIS_URL: RedisDsn | None = None
 
     RP_ID: str = "localhost"
-    RP_NAME: str = "Encrypted P2P Chat"
+    RP_NAME: str = "CryptLink"
     RP_ORIGIN: str = "http://localhost:3000"
 
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
@@ -147,7 +148,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_MESSAGES_PER_MINUTE: int = 60
     RATE_LIMIT_AUTH_ATTEMPTS: int = 5
 
-    @field_validator("DATABASE_URL", mode = "before")
+    @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def assemble_db_connection(cls, v: str | None, info: ValidationInfo) -> str:
         """
@@ -161,13 +162,9 @@ class Settings(BaseSettings):
             f"@{data['POSTGRES_HOST']}:{data['POSTGRES_PORT']}/{data['POSTGRES_DB']}"
         )
 
-    @field_validator("SURREAL_URL", mode = "before")
+    @field_validator("SURREAL_URL", mode="before")
     @classmethod
-    def assemble_surreal_connection(
-        cls,
-        v: str | None,
-        info: ValidationInfo
-    ) -> str:
+    def assemble_surreal_connection(cls, v: str | None, info: ValidationInfo) -> str:
         """
         Build SurrealDB WebSocket URL if not provided
         """
@@ -176,21 +173,16 @@ class Settings(BaseSettings):
         data = info.data
         return f"ws://{data['SURREAL_HOST']}:{data['SURREAL_PORT']}"
 
-    @field_validator("REDIS_URL", mode = "before")
+    @field_validator("REDIS_URL", mode="before")
     @classmethod
-    def assemble_redis_connection(
-        cls,
-        v: str | None,
-        info: ValidationInfo
-    ) -> str:
+    def assemble_redis_connection(cls, v: str | None, info: ValidationInfo) -> str:
         """
         Build Redis connection URL if not provided
         """
         if v:
             return v
         data = info.data
-        password_part = f":{data['REDIS_PASSWORD']}@" if data["REDIS_PASSWORD"
-                                                              ] else ""
+        password_part = f":{data['REDIS_PASSWORD']}@" if data["REDIS_PASSWORD"] else ""
         return f"redis://{password_part}{data['REDIS_HOST']}:{data['REDIS_PORT']}"
 
     @property

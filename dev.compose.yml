@@ -81,7 +81,7 @@ services:
       SURREAL_DATABASE: ${SURREAL_DATABASE:-production}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       RP_ID: ${RP_ID:-localhost}
-      RP_NAME: ${RP_NAME:-Encrypted P2P Chat}
+      RP_NAME: ${RP_NAME:-CryptLink}
       RP_ORIGIN: ${RP_ORIGIN:-http://localhost:32342}
       CORS_ORIGINS: ${CORS_ORIGINS}
     volumes:

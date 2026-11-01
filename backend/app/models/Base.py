@@ -21,33 +21,34 @@ class BaseDBModel(SQLModel):
     """
     Base model with common timestamp fields
     """
+
     created_at: datetime = Field(
-        default_factory = lambda: datetime.now(UTC),
-        nullable = False,
-        sa_type = DateTime(timezone = True),
+        default_factory=lambda: datetime.now(UTC),
+        nullable=False,
+        sa_type=DateTime(timezone=True),
     )
     updated_at: datetime = Field(
-        default_factory = lambda: datetime.now(UTC),
-        nullable = False,
-        sa_type = DateTime(timezone = True),
-        sa_column_kwargs = {"onupdate": lambda: datetime.now(UTC)},
+        default_factory=lambda: datetime.now(UTC),
+        nullable=False,
+        sa_type=DateTime(timezone=True),
+        sa_column_kwargs={"onupdate": lambda: datetime.now(UTC)},
     )
 
 
 # Create async engine for PostgreSQL
 engine = create_async_engine(
     str(settings.DATABASE_URL),
-    echo = settings.DEBUG,
-    pool_size = settings.DB_POOL_SIZE,
-    max_overflow = settings.DB_MAX_OVERFLOW,
-    pool_pre_ping = True,
+    echo=settings.DEBUG,
+    pool_size=settings.DB_POOL_SIZE,
+    max_overflow=settings.DB_MAX_OVERFLOW,
+    pool_pre_ping=True,
 )
 
 # Create async session factory
 async_session_maker = sessionmaker(  # type: ignore[call-overload]
-    bind = engine,
-    class_ = AsyncSession,
-    expire_on_commit = False,
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
 )
 
 

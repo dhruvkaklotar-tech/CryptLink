@@ -12,8 +12,9 @@ class CreateRoomRequest(BaseModel):
     """
     Request to create a new room
     """
-    creator_id: str
+
     participant_id: str
+    creator_id: str | None = None
     room_type: RoomType = RoomType.DIRECT
 
 
@@ -21,6 +22,7 @@ class ParticipantResponse(BaseModel):
     """
     Participant in a room
     """
+
     user_id: str
     username: str
     display_name: str
@@ -32,6 +34,7 @@ class RoomAPIResponse(BaseModel):
     """
     Room response for API
     """
+
     id: str
     type: RoomType
     name: str | None = None
@@ -46,4 +49,5 @@ class RoomListResponse(BaseModel):
     """
     List of rooms response
     """
+
     rooms: list[RoomAPIResponse]

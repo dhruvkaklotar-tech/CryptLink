@@ -19,7 +19,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 COPY backend/pyproject.toml ./
-RUN uv pip install --system -e .[dev]
+RUN uv pip install --system greenlet -e .[dev]
 
 COPY backend/ .
 
