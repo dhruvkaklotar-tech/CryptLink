@@ -1,5 +1,5 @@
 // ===================
-// © AngelaMos | 2026
+// CryptLink Engineering | 2026
 // primitives.ts
 // ===================
 import { base64UrlDecode, base64UrlEncode } from "../lib/base64";

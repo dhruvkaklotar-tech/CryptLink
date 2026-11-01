@@ -1,5 +1,5 @@
 // ===================
-// NetSentry Cryptographic Engine
+// CryptLink Cryptographic Engine
 // safety-number.ts - SAS (Short Authentication String) & MitM Verification
 // ===================
 

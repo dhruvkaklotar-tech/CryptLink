@@ -1,10 +1,10 @@
 ```text
-██████╗ ██████╗ ██╗   ██╗██████╗ ████████╗██╗     ██╗███╗   ██╗██╗  ██╗
-██╔════╝ ██╔══██╗╚██╗ ██╔╝██╔══██╗╚══██╔══╝██║     ██║████╗  ██║██║ ██╔╝
-██║      ██████╔╝ ╚████╔╝ ██████╔╝   ██║   ██║     ██║██╔██╗ ██║█████╔╝ 
-██║      ██╔══██╗  ╚██╔╝  ██╔═══╝    ██║   ██║     ██║██║╚██╗██║██╔═██╗ 
-╚██████╗ ██║  ██║   ██║   ██║        ██║   ███████╗██║██║ ╚████║██║  ██╗
- ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝        ╚═╝   ╚══════╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝
+   ______                  __  __    _       __  
+  / ____/______  ______   / /_/ /   (_)___  / /__
+ / /   / ___/ / / / __ \ / __/ /   / / __ \/ //_/
+/ /___/ /  / /_/ / /_/ // /_/ /___/ / / / / ,<   
+\____/_/   \__, / .___(_)__/\____/_/_/ /_/_/|_|  
+          /____/_/                               
 ```
 
 # CryptLink
@@ -52,13 +52,13 @@
 
 ### 2. Out-of-Band MitM Defense & SAS Verification
 - **60-Digit Cryptographic SAS:** Deterministic SHA-512 authentication string formatted into 12 blocks of 5 digits for voice or out-of-band verification.
-- **16×16 Visual Agreement Matrix:** Deterministic bit-plane visualization derived from public identity key intersection, enabling instant visual confirmation.
+- **16x16 Visual Agreement Matrix:** Deterministic bit-plane visualization derived from public identity key intersection, enabling instant visual confirmation.
 - **Zero-Touch Key Audit & MitM Interlocks:** Automated background key audit monitors server-advertised bundles. If an identity key changes, the UI triggers a critical alarm and interlocks transmission.
 - **Real-Time Mutual Notification:** Clicking `MARK AS VERIFIED` transmits an authenticated cryptographic event over WebSocket, immediately alerting the remote peer.
 
 ### 3. Synchronized Ephemeral Messages (30s Disappearing TTL)
 - **Seen-Event Trigger:** The disappearing countdown initiates only when the recipient opens and views the message.
-- **Synchronized Zeroization:** An encrypted read receipt coordinates countdown initiation on the sender’s side, ensuring simultaneous deletion from IndexedDB and RAM across both devices.
+- **Synchronized Zeroization:** An encrypted read receipt coordinates countdown initiation on the sender's side, ensuring simultaneous deletion from IndexedDB and RAM across both devices.
 
 ### 4. Zero-Knowledge Vault & Duress Controls
 - **Confidential Note Packaging:** Argon2id master key derivation with client-side PBKDF2 salt isolation wraps sensitive secrets inside independent AES-256-GCM envelopes.
@@ -75,7 +75,7 @@
 | **Digital Signatures** | Ed25519 (`SHA-512`) | RFC 8032 | Collision-resistant asymmetric prekey signatures |
 | **Key Derivation (KDF)** | HKDF-SHA256 | RFC 5869 | Cryptographic root, chain, and message key advancement |
 | **Vault Derivation** | Argon2id + PBKDF2 | RFC 9106 / RFC 8018 | Memory-hard password hashing & salt isolation |
-| **Safety Numbers (SAS)** | Deterministic SHA-512 | Custom Spec | 60-digit decimal string & 16×16 bit-plane visual matrix |
+| **Safety Numbers (SAS)** | Deterministic SHA-512 | Custom Spec | 60-digit decimal string & 16x16 bit-plane visual matrix |
 | **Authentication** | FIDO2 / WebAuthn | W3C Recommendation | Hardware-backed passkeys, biometric touch, anti-phishing |
 | **Replay Defense** | Nonce Cache Ring | Monotonic 96-bit | Immediate duplicate frame rejection |
 
@@ -117,9 +117,9 @@ sequenceDiagram
 
 ## Tactical HUD & Security Panels
 
-The CryptLink interface is built using a **Navy Blue (`#0B1B3D`)** and **Neon Blue (`#1D6EE5` / `#38BDF8`)** cyberpunk command-center theme with zero hardcoded fallbacks:
+The CryptLink interface is built using a **Navy Blue (`#0B1B3D`)** and **Neon Blue (`#1D6EE5` / `#38BDF8`)** command-center theme with zero hardcoded fallbacks:
 
-```
+```text
 +---------------------------------------------------------------------------------------+
 |  CRYPTLINK SENTINEL C4ISR // TACTICAL RADAR & DEFENSE HUD                             |
 +---------------------------------------------------------------------------------------+
@@ -142,7 +142,7 @@ The CryptLink interface is built using a **Navy Blue (`#0B1B3D`)** and **Neon Bl
 ```
 
 ### Primary Security Interfaces:
-1. **SAS Ciphertext & Matrix (`SafetyNumberModal.tsx`):** Compare 60-digit numbers or the 16×16 deterministic pixel matrix out-of-band. Click **MARK AS VERIFIED** to notify the remote peer in real time.
+1. **SAS Ciphertext & Matrix (`SafetyNumberModal.tsx`):** Compare 60-digit numbers or the 16x16 deterministic pixel matrix out-of-band. Click **MARK AS VERIFIED** to notify the remote peer in real time.
 2. **Key Server Audit (`SafetyNumberModal.tsx` Tab 3):** Side-by-side comparison of server-advertised keys against locally pinned keys to detect server-side tampering.
 3. **Sentinel C4ISR Tactical Radar (`SentinelDefenseModal.tsx`):** Live WebSocket heartbeat latency sweep, jitter analysis, replay attack monitor, and DEFCON telemetry.
 4. **Cryptographic Audit Inspector (`SessionDetailsModal.tsx`):** Granular telemetry showing sending chain index ($N_s$), receiving chain index ($N_r$), total ratchet steps, and exportable audit certificates.
@@ -152,8 +152,8 @@ The CryptLink interface is built using a **Navy Blue (`#0B1B3D`)** and **Neon Bl
 
 ## Directory Layout
 
-```
-NetS/
+```text
+CryptLink/
 ├── backend/                        # FastAPI High-Performance Asynchronous Core
 │   ├── app/
 │   │   ├── api/                    # Authentication, Encryption, Rooms, WebSockets
@@ -194,8 +194,8 @@ NetS/
 
 ```bash
 # Clone the repository
-git clone https://github.com/CarterPerez-dev/Cybersecurity-Projects.git
-cd Cybersecurity-Projects
+git clone https://github.com/dhruvkaklotar-tech/CryptLink.git
+cd CryptLink
 
 # Launch full stack (FastAPI, PostgreSQL, SurrealDB, Redis, SolidJS Frontend)
 docker compose -f dev.compose.yml up -d
@@ -228,7 +228,7 @@ docker exec chat-backend-dev ruff check app/ tests/
 
 ### Verified Test Matrix:
 - **`vault-service.test.ts` (3/3):** Argon2id key derivation, PBKDF2 salt generation, and envelope encryption.
-- **`safety-number.test.ts` (3/3):** SHA-512 60-digit chunking and 16×16 visual bit-plane generation.
+- **`safety-number.test.ts` (3/3):** SHA-512 60-digit chunking and 16x16 visual bit-plane generation.
 - **`x3dh.test.ts` (5/5):** Curve25519 handshakes, ephemeral keys, and Ed25519 signature checks.
 - **`double-ratchet.test.ts` (4/4):** Symmetric KDF chains, out-of-order skipped message handling, self-healing.
 - **`verify-and-chat-flow.test.ts` (1/1):** Full peer verification, bidirectional chat, and MitM attack rejection.
@@ -256,7 +256,7 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 
 ```text
 CryptLink: High-Assurance End-to-End Encrypted Communications System
-Copyright (C) 2026 CryptLink Contributors (Carter Perez, AngelaMos)
+Copyright (C) 2026 CryptLink Contributors (Dhruv Kaklotar, CryptLink Engineering)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -268,7 +268,3 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
 ```
-
-Under the AGPL-3.0, any modified versions deployed across network environments (such as SaaS, hosted messaging servers, or relays) must make their complete corresponding source code available to all connecting users.
-
-See the full text in the [LICENSE](LICENSE) file.

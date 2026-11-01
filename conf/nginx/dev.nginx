@@ -1,4 +1,4 @@
-# ©AngelaMos | 2025
+# CryptLink Engineering | 2026
 # Development Nginx Configuration
 # - Proxies to Vite dev server (HMR/WebSocket support)
 # - Proxies /api and /ws to FastAPI backend

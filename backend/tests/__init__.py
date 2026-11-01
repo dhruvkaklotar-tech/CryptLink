@@ -1,4 +1,4 @@
 """
-ⒸAngelaMos | 2025
+CryptLink Engineering | 2026
 encrypted-p2p-chat pyest suite
 """

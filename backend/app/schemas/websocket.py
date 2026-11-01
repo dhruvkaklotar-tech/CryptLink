@@ -1,5 +1,5 @@
 """
-ⒸAngelaMos | 2025
+CryptLink Engineering | 2026
 Pydantic schemas for WebSocket message types
 """
 

@@ -1,4 +1,4 @@
-# ©AngelaMos | 2025
+# CryptLink Engineering | 2026
 # Production Nginx Configuration
 # - Serves static frontend from /usr/share/nginx/html
 # - Proxies /api and /ws to FastAPI backend

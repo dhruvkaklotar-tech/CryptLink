@@ -1,5 +1,5 @@
 // ===================
-// © AngelaMos | 2026
+// CryptLink Engineering | 2026
 // double-ratchet.ts
 // ===================
 import type {

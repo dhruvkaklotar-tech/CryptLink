@@ -1,5 +1,5 @@
 // ===================
-// © AngelaMos | 2025
+// CryptLink Engineering | 2026
 // components.ts
 // ===================
 import type { JSX } from "solid-js";

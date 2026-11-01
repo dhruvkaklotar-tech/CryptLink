@@ -1,5 +1,5 @@
 // ===================
-// © AngelaMos | 2025
+// CryptLink Engineering | 2026
 // chat.ts
 // ===================
 export type MessageStatus = "sending" | "sent" | "delivered" | "read" | "failed";

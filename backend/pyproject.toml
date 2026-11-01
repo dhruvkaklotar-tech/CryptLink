@@ -1,10 +1,10 @@
 [project]
-name = "encrypted-p2p-chat"
+name = "cryptlink"
 version = "1.0.0"
-description = "End-to-end encrypted P2P chat with Triple Ratchet and WebAuthn"
+description = "High-Assurance End-to-End Encrypted Communications with Double Ratchet, X3DH, and WebAuthn"
 requires-python = ">=3.13"
 authors = [
-    {name = "Carter", email = "carter@certgames.com"}
+    {name = "CryptLink Engineering", email = "engineering@cryptlink.org"}
 ]
 
 dependencies = [

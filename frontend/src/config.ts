@@ -1,5 +1,5 @@
 // ===================
-// © AngelaMos | 2025
+// CryptLink Engineering | 2026
 // config.ts
 // ===================
 const envApiUrl: string | undefined = import.meta.env.VITE_API_URL as string | undefined;

@@ -1,5 +1,5 @@
 """
-ⒸAngelaMos | 2025
+CryptLink Engineering | 2026
 Application entry point with uvicorn server command
 """
 

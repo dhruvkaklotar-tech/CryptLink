@@ -1,5 +1,5 @@
 // ===================
-// © AngelaMos | 2025
+// CryptLink Engineering | 2026
 // eslint.config.js
 // ===================
 import js from '@eslint/js'
