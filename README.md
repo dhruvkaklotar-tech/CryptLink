@@ -11,12 +11,17 @@
 
 ### High-Assurance End-to-End Encrypted Communications & Sentinel C4ISR Defense
 
-[![Version](https://img.shields.io/badge/Release-v1.0.0--High_Assurance-0B1B3D?style=for-the-badge&logo=shield&logoColor=38BDF8)](https://github.com/CarterPerez-dev/Cybersecurity-Projects)
+<p align="center">
+  <img src="frontend/public/assets/og-preview.png" alt="CryptLink Tactical HUD Preview" width="100%" style="border-radius: 8px; border: 1px solid #1D6EE5;" />
+</p>
+
+[![CI](https://github.com/dhruvkaklotar-tech/CryptLink/actions/workflows/ci.yml/badge.svg)](https://github.com/dhruvkaklotar-tech/CryptLink/actions)
+[![Version](https://img.shields.io/badge/Release-v1.0.0--High_Assurance-0B1B3D?style=for-the-badge&logo=shield&logoColor=38BDF8)](https://github.com/dhruvkaklotar-tech/CryptLink)
 [![Protocol](https://img.shields.io/badge/Protocol-X3DH_%2B_Double_Ratchet-0B1B3D?style=for-the-badge&logo=signal&logoColor=38BDF8)](https://signal.org/docs/)
 [![Cipher Suite](https://img.shields.io/badge/Cipher_Suite-AES--256--GCM_%7C_Curve25519-0B1B3D?style=for-the-badge&logo=lock&logoColor=38BDF8)](https://csrc.nist.gov/)
 [![Authentication](https://img.shields.io/badge/Authentication-FIDO2_%2F_WebAuthn_Passkeys-0B1B3D?style=for-the-badge&logo=fido&logoColor=38BDF8)](https://fidoalliance.org/)
 [![License: AGPLv3](https://img.shields.io/badge/License-AGPL_v3-0B1B3D?style=for-the-badge&logo=gnu&logoColor=38BDF8)](LICENSE)
-[![Tests](https://img.shields.io/badge/Test_Suite-30%2F30_Passing-10B981?style=for-the-badge&logo=checkmarx&logoColor=white)](tests)
+[![Tests](https://img.shields.io/badge/Test_Suite-30%2F30_Passing-10B981?style=for-the-badge&logo=checkmarx&logoColor=white)](https://github.com/dhruvkaklotar-tech/CryptLink/actions)
 
 > **DEFCON 1 // TS-SCI Cryptographic Architecture**  
 > CryptLink is a zero-knowledge, end-to-end encrypted (E2EE) tactical communications engine engineered for hostile network environments. It combines the **Signal Protocol** (Extended Triple Diffie-Hellman + Double Ratchet), **FIDO2/WebAuthn hardware passkeys**, out-of-band **Short Authentication String (SAS)** verification, synchronized **ephemeral zeroization**, and an interactive **Sentinel C4ISR Tactical Radar HUD**.
