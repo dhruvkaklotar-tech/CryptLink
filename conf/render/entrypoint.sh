@@ -18,16 +18,16 @@ if [ -n "$PG_VER" ]; then
     su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE chat_auth TO chat_user;\"" || true
 fi
 
-# 3. Start SurrealDB (rocksdb file persistence or in-memory)
-echo "==> [CryptLink] Starting SurrealDB..."
+# 3. Start SurrealDB on dedicated port 8001
+echo "==> [CryptLink] Starting SurrealDB on 127.0.0.1:8001..."
 mkdir -p /data/surreal
-surreal start --log error --user root --pass change-this-password rocksdb:/data/surreal/database.db &
+surreal start --log error --user root --pass change-this-password --bind 127.0.0.1:8001 rocksdb:/data/surreal/database.db &
 sleep 2
 
 # 4. Configure environment for FastAPI
 export DATABASE_URL="postgresql+asyncpg://chat_user:change-this-password@localhost:5432/chat_auth"
 export REDIS_URL="redis://localhost:6379"
-export SURREAL_URL="ws://localhost:8000"
+export SURREAL_URL="ws://127.0.0.1:8001"
 export SURREAL_USER="root"
 export SURREAL_PASSWORD="change-this-password"
 export SURREAL_NAMESPACE="chat"
@@ -40,7 +40,7 @@ HOSTNAME="${RENDER_EXTERNAL_HOSTNAME:-localhost}"
 export RP_ID="${HOSTNAME}"
 export RP_NAME="CryptLink"
 export RP_ORIGIN="https://${HOSTNAME}"
-export CORS_ORIGINS="[\"https://${HOSTNAME}\", \"http://localhost:${PORT}\"]"
+export CORS_ORIGINS="[\"https://${HOSTNAME}\", \"http://${HOSTNAME}\", \"http://localhost:${PORT}\", \"http://127.0.0.1:${PORT}\"]"
 
 echo "==> [CryptLink] Launching FastAPI backend on 127.0.0.1:8000..."
 uvicorn app.factory:create_app --factory --host 127.0.0.1 --port 8000 &

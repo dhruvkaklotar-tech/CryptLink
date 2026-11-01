@@ -7,7 +7,7 @@ import type { JSX } from "solid-js";
 import { createEffect, createSignal, Show } from "solid-js";
 import { cryptoService } from "../../crypto";
 import { getRoomSettings, saveRoomSettings } from "../../crypto/key-store";
-import { $userId, getUserStatus, showToast } from "../../stores";
+import { $sidebarOpen, $userId, getUserStatus, showToast } from "../../stores";
 import type { Participant, Room } from "../../types";
 import { EncryptionBadge } from "./EncryptionBadge";
 import { OnlineStatus } from "./OnlineStatus";
@@ -104,7 +104,18 @@ export function ChatHeader(props: ChatHeaderProps): JSX.Element {
       >
         <div class="flex items-center justify-between gap-3">
           {/* Left: User Identity */}
-          <div class="flex min-w-0 items-center gap-3">
+          <div class="flex min-w-0 items-center gap-2 sm:gap-3">
+            {/* Mobile Back to Transmissions Button */}
+            <button
+              type="button"
+              onClick={() => $sidebarOpen.set(true)}
+              aria-label="Open contact list"
+              title="Back to transmissions"
+              class="border-orange text-orange hover:bg-orange flex h-8 w-8 flex-shrink-0 items-center justify-center border-2 bg-black text-[12px] font-bold transition-colors hover:text-black sm:hidden"
+            >
+              &lt;
+            </button>
+
             <div class="relative flex-shrink-0">
               <div class="border-orange flex h-9 w-9 items-center justify-center border-2 bg-black">
                 <span class="font-pixel text-orange text-[10px]">{initials()}</span>

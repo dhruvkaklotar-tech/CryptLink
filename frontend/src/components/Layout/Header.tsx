@@ -138,11 +138,11 @@ export function Header(): JSX.Element {
                   <div class="border-orange text-orange flex h-7 w-7 flex-shrink-0 items-center justify-center border bg-black">
                     <TacticalUserIcon class="h-4 w-4" />
                   </div>
-                  <div class="flex flex-col justify-center space-y-1.5 py-0.5 text-left">
-                    <span class="font-pixel block text-[8px] tracking-wider text-[#38BDF8] uppercase">
+                  <div class="hidden xs:flex flex-col justify-center space-y-1 py-0.5 text-left">
+                    <span class="font-pixel block text-[7px] sm:text-[8px] tracking-wider text-[#38BDF8] uppercase">
                       CALLSIGN
                     </span>
-                    <span class="font-pixel block max-w-[150px] truncate text-[11px] font-bold tracking-wide uppercase">
+                    <span class="font-pixel block max-w-[70px] sm:max-w-[150px] truncate text-[9px] sm:text-[11px] font-bold tracking-wide uppercase">
                       {user.display_name}
                     </span>
                   </div>

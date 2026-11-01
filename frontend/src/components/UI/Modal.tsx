@@ -66,13 +66,13 @@ export function Modal(props: ModalProps): JSX.Element {
         />
 
         <div
-          class={`border-orange animate-scale-in relative z-10 w-full border-4 bg-black shadow-[8px_8px_0_var(--color-orange)] ${SIZE_CLASSES[size()]} ${props.class ?? ""} `}
+          class={`border-orange animate-scale-in relative z-10 flex max-h-[90vh] w-full flex-col border-4 bg-black shadow-[8px_8px_0_var(--color-orange)] ${SIZE_CLASSES[size()]} ${props.class ?? ""} `}
           role="dialog"
           aria-modal="true"
           aria-labelledby={props.title ? "modal-title" : undefined}
         >
           <Show when={(props.title !== undefined && props.title !== "") || showCloseButton()}>
-            <div class="border-orange flex items-start justify-between border-b-2 p-4">
+            <div class="border-orange flex-shrink-0 flex items-start justify-between border-b-2 p-4">
               <div class="flex-1">
                 <Show when={props.title}>
                   <h2 id="modal-title" class="font-pixel text-orange text-sm uppercase">
@@ -96,7 +96,7 @@ export function Modal(props: ModalProps): JSX.Element {
             </div>
           </Show>
 
-          <div class="p-4">{props.children}</div>
+          <div class="scrollbar-pixel flex-1 overflow-y-auto p-4">{props.children}</div>
         </div>
       </div>
     </Show>

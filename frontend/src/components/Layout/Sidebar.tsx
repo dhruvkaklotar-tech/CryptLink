@@ -10,6 +10,7 @@ import {
   $activeRoomId,
   $currentUser,
   $rooms,
+  $sidebarOpen,
   $totalUnreadCount,
   getUserStatus,
   openModal,
@@ -128,7 +129,12 @@ export function Sidebar(): JSX.Element {
               <button
                 type="button"
                 data-room-id={room.id}
-                onClick={() => setActiveRoom(room.id)}
+                onClick={() => {
+                  setActiveRoom(room.id);
+                  if (typeof window !== "undefined" && window.innerWidth < 640) {
+                    $sidebarOpen.set(false);
+                  }
+                }}
                 class={`flex w-full items-center gap-3 border-2 p-2.5 text-left transition-all duration-100 ${
                   isActive()
                     ? "border-orange bg-orange font-bold text-black shadow-[2px_2px_0_#000]"

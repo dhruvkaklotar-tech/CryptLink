@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Outer Ring -->
+  <circle cx="256" cy="256" r="236" fill="#070E1E" stroke="#38BDF8" stroke-width="18"/>
+  <circle cx="256" cy="256" r="200" stroke="#1D6EE5" stroke-width="6" stroke-opacity="0.6"/>
+
+  <!-- Shackle (Top Arch) -->
+  <path d="M180 240 V160 C180 118 214 84 256 84 C298 84 332 118 332 160 V240" 
+        stroke="#F8FAFC" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Padlock Body (Chiseled Geometry) -->
+  <path d="M150 220 H362 L382 240 V360 L362 380 H150 L130 360 V240 Z" 
+        fill="#0B1B3D" stroke="#38BDF8" stroke-width="16" stroke-linejoin="round"/>
+  <path d="M165 235 H347 L363 251 V349 L347 365 H165 L149 349 V251 Z" 
+        stroke="#1D6EE5" stroke-width="6" stroke-linejoin="round"/>
+
+  <!-- Central Keyhole & Emerald Core -->
+  <circle cx="256" cy="290" r="24" fill="#38BDF8"/>
+  <polygon points="246,290 266,290 274,332 238,332" fill="#38BDF8"/>
+  <circle cx="256" cy="290" r="10" fill="#34D399"/>
+</svg>

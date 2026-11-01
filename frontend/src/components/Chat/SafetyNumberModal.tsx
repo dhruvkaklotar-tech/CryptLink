@@ -203,7 +203,7 @@ export function SafetyNumberModal(props: SafetyNumberModalProps): JSX.Element {
     >
       <div class="space-y-4">
         {/* Navigation Tabs */}
-        <div class="border-orange/40 flex items-center gap-2 border-b-2 pb-2">
+        <div class="border-orange/40 flex items-center gap-2 border-b-2 pb-2 overflow-x-auto scrollbar-none flex-nowrap">
           <button
             type="button"
             onClick={() => setActiveTab("sas")}

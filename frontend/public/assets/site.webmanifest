@@ -1,1 +1,19 @@
-{"name":"CryptLink","short_name":"CryptLink","icons":[{"src":"/android-chrome-192x192.png","sizes":"192x192","type":"image/png"},{"src":"/android-chrome-512x512.png","sizes":"512x512","type":"image/png"}],"theme_color":"#8E2A7C","background_color":"#000000","display":"standalone"}
+{
+  "name": "CryptLink Tactical Defense",
+  "short_name": "CryptLink",
+  "icons": [
+    {
+      "src": "/assets/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#0B1B3D",
+  "background_color": "#070E1E",
+  "display": "standalone"
+}

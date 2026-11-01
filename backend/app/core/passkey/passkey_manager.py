@@ -80,8 +80,8 @@ class PasskeyManager:
             challenge=challenge,
             attestation=AttestationConveyancePreference.NONE,
             authenticator_selection=AuthenticatorSelectionCriteria(
-                resident_key=ResidentKeyRequirement.REQUIRED,
-                user_verification=UserVerificationRequirement.REQUIRED,
+                resident_key=ResidentKeyRequirement.PREFERRED,
+                user_verification=UserVerificationRequirement.PREFERRED,
             ),
             exclude_credentials=exclude_creds,
         )
@@ -155,7 +155,7 @@ class PasskeyManager:
             rp_id=self.rp_id,
             challenge=challenge,
             allow_credentials=allow_creds,
-            user_verification=UserVerificationRequirement.REQUIRED,
+            user_verification=UserVerificationRequirement.PREFERRED,
         )
 
         logger.debug("Generated authentication options")

@@ -5,7 +5,7 @@
 import { useStore } from "@nanostores/solid";
 import type { JSX, ParentProps } from "solid-js";
 import { Show } from "solid-js";
-import { $isMobile, $sidebarOpen } from "../../stores";
+import { $sidebarOpen } from "../../stores";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 
@@ -16,7 +16,6 @@ interface AppShellProps extends ParentProps {
 
 export function AppShell(props: AppShellProps): JSX.Element {
   const sidebarOpen = useStore($sidebarOpen);
-  const isMobile = useStore($isMobile);
 
   const showSidebar = (): boolean => props.showSidebar ?? true;
   const showHeader = (): boolean => props.showHeader ?? true;
@@ -27,22 +26,22 @@ export function AppShell(props: AppShellProps): JSX.Element {
         <Header />
       </Show>
 
-      <div class="flex flex-1 overflow-hidden">
+      <div class="relative flex flex-1 overflow-hidden">
         <Show when={showSidebar() && sidebarOpen()}>
-          <div class="border-orange h-full w-72 flex-shrink-0 overflow-hidden border-r-2 bg-black sm:w-80">
+          <div class="border-orange fixed sm:static inset-y-0 left-0 top-14 sm:top-0 z-40 h-[calc(100%-3.5rem)] sm:h-full w-72 sm:w-80 flex-shrink-0 overflow-hidden border-r-2 bg-black shadow-2xl transition-all duration-200">
             <Sidebar />
           </div>
         </Show>
 
-        <main class="tactical-grid-bg relative flex flex-1 flex-col overflow-hidden bg-black">
+        <main class="tactical-grid-bg relative flex flex-1 flex-col overflow-hidden bg-black w-full min-w-0">
           {props.children}
         </main>
       </div>
 
-      <Show when={isMobile() && sidebarOpen()}>
+      <Show when={sidebarOpen()}>
         <button
           type="button"
-          class="fixed inset-0 z-30 h-full w-full cursor-default appearance-none border-0 bg-black/80"
+          class="fixed inset-0 z-30 h-full w-full cursor-default appearance-none border-0 bg-black/80 backdrop-blur-xs sm:hidden"
           tabIndex={-1}
           aria-label="Close sidebar"
           onClick={() => $sidebarOpen.set(false)}
