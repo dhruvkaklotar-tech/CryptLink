@@ -5,7 +5,7 @@
 
 import { useStore } from "@nanostores/solid";
 import type { JSX } from "solid-js";
-import { createEffect, createSignal, onCleanup, Show } from "solid-js";
+import { createEffect, createSignal, For, onCleanup, Show } from "solid-js";
 import { ChatHeader, ChatInput, MessageList, NewConversation } from "../components/Chat";
 import { AppShell, ProtectedRoute } from "../components/Layout";
 import { cryptoService, saveDecryptedMessage } from "../crypto";
@@ -16,6 +16,8 @@ import {
   $activeRoom,
   $activeRoomId,
   $currentUser,
+  $rooms,
+  $sidebarOpen,
   $userId,
   addMessage,
   closeModal,
@@ -24,12 +26,13 @@ import {
   setActiveRoom,
   showToast,
 } from "../stores";
-import type { Participant } from "../types";
+import type { Participant, Room } from "../types";
 import { connectWebSocket, disconnectWebSocket, wsManager } from "../websocket";
 
 export default function Chat(): JSX.Element {
   const activeRoom = useStore($activeRoom);
   const activeRoomId = useStore($activeRoomId);
+  const rooms = useStore($rooms);
   const userId = useStore($userId);
   const activeModal = useStore($activeModal);
   const [securityAlert, setSecurityAlert] = createSignal<string | null>(null);
@@ -210,10 +213,16 @@ export default function Chat(): JSX.Element {
   return (
     <ProtectedRoute>
       <AppShell>
-        <div class="flex h-full flex-col bg-black">
+        <div class="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-black">
           <Show
             when={activeRoomId()}
-            fallback={<EmptyState onNewChat={handleNewChat} />}
+            fallback={
+              <EmptyState
+                onNewChat={handleNewChat}
+                rooms={rooms()}
+                currentUserId={userId()}
+              />
+            }
             keyed
           >
             {(roomId) => (
@@ -234,7 +243,7 @@ export default function Chat(): JSX.Element {
                     </button>
                   </div>
                 </Show>
-                <MessageList roomId={roomId} />
+                <MessageList roomId={roomId} class="flex-1 min-h-0" />
                 <ChatInput
                   roomId={roomId}
                   recipientId={
@@ -260,24 +269,76 @@ export default function Chat(): JSX.Element {
 
 interface EmptyStateProps {
   onNewChat: () => void;
+  rooms?: Record<string, Room>;
+  currentUserId?: string | null;
 }
 
 function EmptyState(props: EmptyStateProps): JSX.Element {
+  const roomList = () => Object.values(props.rooms ?? {});
+
   return (
-    <div class="flex h-full flex-col items-center justify-center p-4">
-      <div class="text-center">
+    <div class="scrollbar-pixel flex h-full min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto p-4 sm:p-6">
+      <div class="w-full max-w-md text-center">
         <ChatIcon />
-        <h2 class="font-pixel text-orange mt-4 mb-2 text-sm">SELECT A CONVERSATION</h2>
-        <p class="font-pixel text-gray mb-6 text-[10px]">
-          CHOOSE A CHAT FROM THE SIDEBAR OR START A NEW ONE
+        <h2 class="font-pixel text-orange mt-4 mb-2 text-sm sm:text-base">
+          {roomList().length > 0 ? "SECURE CHANNELS READY" : "INITIALIZE TRANSMISSION"}
+        </h2>
+        <p class="font-pixel text-gray mb-6 text-[9px] sm:text-[10px] leading-relaxed">
+          {roomList().length > 0
+            ? "SELECT AN ACTIVE CHANNEL BELOW OR INITIALIZE A NEW ENCRYPTED TRANSMISSION TO CHAT"
+            : "ESTABLISH A ZERO-KNOWLEDGE DOUBLE RATCHET CHANNEL WITH ANY CONTACT CALLSIGN"}
         </p>
-        <button
-          type="button"
-          onClick={() => props.onNewChat()}
-          class="border-orange text-orange font-pixel hover:bg-orange border-2 px-6 py-3 text-[10px] transition-colors hover:text-black"
-        >
-          START NEW CHAT
-        </button>
+
+        {/* Action Buttons */}
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
+          <button
+            type="button"
+            onClick={() => props.onNewChat()}
+            class="border-orange bg-orange text-black font-pixel hover:bg-white border-2 px-5 py-3 text-[10px] font-bold transition-colors w-full sm:w-auto shadow-[2px_2px_0_#000]"
+          >
+            + NEW TRANSMISSION
+          </button>
+          <button
+            type="button"
+            onClick={() => $sidebarOpen.set(true)}
+            class="border-orange text-orange hover:bg-orange hover:text-black font-pixel border-2 px-5 py-3 text-[10px] transition-colors w-full sm:w-auto sm:hidden"
+          >
+            OPEN CONTACTS DRAWER
+          </button>
+        </div>
+
+        {/* If user has rooms, list them clearly right here */}
+        <Show when={roomList().length > 0}>
+          <div class="border-2 border-dark-gray/80 bg-[#050D1C] p-3 text-left space-y-2">
+            <span class="font-pixel text-[#38BDF8] text-[8px] uppercase tracking-wider block border-b border-dark-gray/60 pb-1.5">
+              ACTIVE ENCRYPTED CHANNELS ({roomList().length})
+            </span>
+            <div class="space-y-1.5 max-h-48 overflow-y-auto scrollbar-pixel">
+              <For each={roomList()}>
+                {(r) => {
+                  const other = () => r.participants?.find((p) => p.user_id !== props.currentUserId);
+                  const name = () => r.name ?? other()?.display_name ?? other()?.username ?? "SECURE CHAT";
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => setActiveRoom(r.id)}
+                      class="flex w-full items-center justify-between border border-dark-gray hover:border-orange bg-black p-2 text-left transition-colors hover:bg-orange/10 group"
+                    >
+                      <div class="flex items-center gap-2">
+                        <span class="font-pixel text-orange text-[9px] group-hover:text-white">
+                          &gt; {name()}
+                        </span>
+                      </div>
+                      <span class="font-pixel text-[8px] text-orange border border-orange px-2 py-0.5 group-hover:bg-orange group-hover:text-black">
+                        ENTER
+                      </span>
+                    </button>
+                  );
+                }}
+              </For>
+            </div>
+          </div>
+        </Show>
       </div>
     </div>
   );

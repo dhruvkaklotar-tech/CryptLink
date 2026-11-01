@@ -85,18 +85,18 @@ export function ChatInput(props: ChatInputProps): JSX.Element {
 
   return (
     <div
-      class={`border-orange tactical-corners flex-shrink-0 border-t-2 bg-black p-3 sm:p-4 ${props.class ?? ""}`}
+      class={`border-orange tactical-corners flex-shrink-0 sticky bottom-0 z-20 border-t-2 bg-black p-2 sm:p-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] ${props.class ?? ""}`}
     >
       {/* Tactical Radio Buffer Status */}
-      <div class="font-pixel text-gray mb-2 flex items-center justify-between px-1 text-[7px]">
-        <div class="flex items-center gap-2">
+      <div class="font-pixel text-gray mb-1.5 sm:mb-2 flex items-center justify-between px-1 text-[7px]">
+        <div class="flex items-center gap-1.5 sm:gap-2">
           <span class="inline-flex items-center gap-1 text-green-400">
             <span class="inline-block h-1.5 w-1.5 animate-pulse bg-green-500"></span>
-            TX-BURST BUFFER: ARMED
+            TX BUFFER: ARMED
           </span>
           <span class="text-dark-gray">|</span>
-          <span class="font-mono text-[8px] tracking-normal text-[#38BDF8]">
-            PAYLOAD: [{charCount()}/{MESSAGE_MAX_LENGTH}]
+          <span class="font-mono text-[7px] sm:text-[8px] tracking-normal text-[#38BDF8]">
+            [{charCount()}/{MESSAGE_MAX_LENGTH}]
           </span>
         </div>
         <div class="text-gray hidden items-center gap-2 sm:flex">
@@ -106,12 +106,12 @@ export function ChatInput(props: ChatInputProps): JSX.Element {
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-1.5 sm:gap-2">
         {/* Encrypted File / Secret Vault Button */}
         <button
           type="button"
           onClick={() => setShowVaultModal(true)}
-          class="border-orange text-orange hover:bg-orange font-pixel flex h-10 flex-shrink-0 items-center gap-1.5 border-2 bg-black px-3 text-[9px] transition-colors hover:text-black"
+          class="border-orange text-orange hover:bg-orange font-pixel flex h-10 flex-shrink-0 items-center justify-center gap-1 border-2 bg-black px-2 sm:px-3 text-[9px] transition-colors hover:text-black"
           title="Attach Encrypted File or Secret Note"
         >
           <VaultIcon />
@@ -120,17 +120,21 @@ export function ChatInput(props: ChatInputProps): JSX.Element {
 
         {/* Input Bar */}
         <div class="border-orange flex h-10 flex-1 items-center border-2 bg-black">
-          <span class="font-pixel text-orange px-2 text-[10px] select-none">&gt;&gt;&gt;</span>
+          <span class="font-pixel text-orange px-1.5 sm:px-2 text-[9px] sm:text-[10px] select-none">&gt;&gt;&gt;</span>
           <input
             ref={inputRef}
             type="text"
+            enterkeyhint="send"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="sentences"
             value={message()}
             onInput={handleInput}
             onKeyDown={handleKeyDown}
             placeholder="TYPE ENCRYPTED MESSAGE..."
             disabled={props.disabled}
             maxLength={MESSAGE_MAX_LENGTH + 100}
-            class="font-pixel placeholder:text-gray flex-1 bg-transparent py-1 pr-3 text-[10px] text-white focus:outline-none disabled:opacity-50"
+            class="font-pixel placeholder:text-gray flex-1 bg-transparent py-1 pr-2 sm:pr-3 text-[9px] sm:text-[10px] text-white focus:outline-none disabled:opacity-50"
           />
         </div>
 
@@ -139,11 +143,12 @@ export function ChatInput(props: ChatInputProps): JSX.Element {
           type="button"
           onClick={handleSend}
           disabled={!canSend()}
-          class="border-orange bg-orange font-pixel flex h-10 flex-shrink-0 items-center gap-2 border-2 px-4 text-[10px] font-bold text-black transition-colors hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+          class="border-orange bg-orange font-pixel flex h-10 flex-shrink-0 items-center justify-center gap-1.5 border-2 px-2.5 sm:px-4 text-[9px] sm:text-[10px] font-bold text-black transition-colors hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
           title="Transmit End-to-End Encrypted Burst"
         >
           <SendIcon />
-          <span>TRANSMIT</span>
+          <span class="hidden xs:inline">TX</span>
+          <span class="hidden sm:inline">TRANSMIT</span>
         </button>
       </div>
 
