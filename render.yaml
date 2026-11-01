@@ -1,10 +1,10 @@
 services:
   - type: web
     name: cryptlink
-    runtime: docker
-    dockerfilePath: ./Dockerfile
+    env: docker
     plan: free
+    autoDeploy: true
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: PORT
         value: 10000
-

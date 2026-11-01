@@ -13,9 +13,11 @@ echo "==> [CryptLink] Initializing local PostgreSQL daemon..."
 PG_VER=$(ls /usr/lib/postgresql/ 2>/dev/null | sort -V | tail -n 1)
 if [ -n "$PG_VER" ]; then
     service postgresql start || true
-    su - postgres -c "psql -c \"DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'chat_user') THEN CREATE ROLE chat_user LOGIN PASSWORD 'change-this-password'; END IF; END \$\$;\"" || true
-    su - postgres -c "psql -tc \"SELECT 1 FROM pg_database WHERE datname = 'chat_auth'\" | grep -q 1 || psql -c \"CREATE DATABASE chat_auth OWNER chat_user;\"" || true
+    sleep 2
+    su - postgres -c "psql -c \"CREATE USER chat_user WITH PASSWORD 'change-this-password';\"" || su - postgres -c "psql -c \"ALTER USER chat_user WITH PASSWORD 'change-this-password';\""
+    su - postgres -c "psql -c \"CREATE DATABASE chat_auth OWNER chat_user;\"" || true
     su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE chat_auth TO chat_user;\"" || true
+    su - postgres -c "psql -d chat_auth -c \"GRANT ALL ON SCHEMA public TO chat_user;\"" || true
 fi
 
 # 3. Start SurrealDB on dedicated port 8001
@@ -35,6 +37,7 @@ export SURREAL_DATABASE="production"
 export SECRET_KEY="${SECRET_KEY:-c8f3b92e71d4a06584f2e91b5c3a7d9f1e4b8a2c6d0e3f7a9b1c5d8e2f4a6b8c}"
 export ENV="production"
 export DEBUG="false"
+export PYTHONPATH="/app"
 
 HOSTNAME="${RENDER_EXTERNAL_HOSTNAME:-localhost}"
 export RP_ID="${HOSTNAME}"
@@ -44,7 +47,16 @@ export CORS_ORIGINS="[\"https://${HOSTNAME}\", \"http://${HOSTNAME}\", \"http://
 
 echo "==> [CryptLink] Launching FastAPI backend on 127.0.0.1:8000..."
 uvicorn app.factory:create_app --factory --host 127.0.0.1 --port 8000 &
-sleep 2
+
+# Wait for FastAPI to become ready
+echo "==> [CryptLink] Verifying FastAPI backend initialization..."
+for i in {1..20}; do
+    if curl -s http://127.0.0.1:8000/health >/dev/null 2>&1; then
+        echo "==> [CryptLink] FastAPI backend is live and healthy!"
+        break
+    fi
+    sleep 1
+done
 
 # 5. Substitute PORT in nginx configuration and run in foreground
 echo "==> [CryptLink] Starting Nginx on port $PORT..."

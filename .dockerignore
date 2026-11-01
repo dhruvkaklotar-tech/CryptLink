@@ -1,5 +1,9 @@
 .git
 .github
+node_modules
+**/node_modules
+dist
+**/dist
 frontend/node_modules
 frontend/dist
 backend/.venv
