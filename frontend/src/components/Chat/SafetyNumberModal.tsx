@@ -194,6 +194,39 @@ export function SafetyNumberModal(props: SafetyNumberModalProps): JSX.Element {
     showToast("success", "IDENTITY VERIFIED", "CONTACT SIGNED & PINNED VIA SAS SCANNER");
   };
 
+  const handleTrustNewKey = async (): Promise<void> => {
+    if (!props.peer) return;
+    setLoading(true);
+    try {
+      const bundle = await api.encryption.getPublicIdentity(props.peer.user_id);
+      await cryptoService.trustNewPeerIdentityKey(
+        props.peer.user_id,
+        bundle.identity_key,
+        bundle.identity_key_ed25519
+      );
+      setStatus("verified");
+      const num = await cryptoService.getSafetyNumber(props.peer.user_id);
+      if (num) {
+        setSafetyNumber(num);
+        setVisualMatrix(generateSecurityVisualMatrix(num));
+      }
+      const peerFp = await cryptoService.getPeerFingerprint(props.peer.user_id);
+      setPeerFingerprint(peerFp ?? "PENDING");
+      if (activeTab() === "audit") {
+        await runServerAudit();
+      }
+      showToast(
+        "success",
+        "IDENTITY UPDATED & PINNED",
+        `NEW KEY TRUSTED FOR @${(props.peer.display_name || props.peer.username).toUpperCase()}`
+      );
+    } catch {
+      showToast("error", "ERROR", "COULD NOT UPDATE PINNED IDENTITY");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Modal
       isOpen={props.isOpen}
@@ -274,13 +307,23 @@ export function SafetyNumberModal(props: SafetyNumberModalProps): JSX.Element {
         </div>
 
         <Show when={status() === "compromised"}>
-          <div class="border-2 border-red-500 bg-red-950/60 p-3 text-red-200">
+          <div class="border-2 border-red-500 bg-red-950/60 p-3 text-red-200 space-y-2.5">
             <p class="font-pixel text-[9px] leading-relaxed">
               WARNING: The public identity key provided by the server for this contact does NOT
               match their pinned identity key! This may indicate a Man-in-the-Middle
-              interception attack. Do NOT proceed until you have verified their safety number
-              out-of-band.
+              interception attack, or the contact re-installed CryptLink / switched devices.
             </p>
+            <div class="pt-1">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleTrustNewKey}
+                loading={loading()}
+                fullWidth
+              >
+                [⚡] TRUST NEW IDENTITY KEY & RESET SESSION
+              </Button>
+            </div>
           </div>
         </Show>
 
@@ -465,6 +508,20 @@ export function SafetyNumberModal(props: SafetyNumberModalProps): JSX.Element {
                     </span>
                     <span>{new Date(audit().timestamp).toLocaleTimeString()}</span>
                   </div>
+
+                  <Show when={!audit().keysMatch}>
+                    <div class="pt-2">
+                      <Button
+                        variant="primary"
+                        size="xs"
+                        onClick={handleTrustNewKey}
+                        loading={loading()}
+                        fullWidth
+                      >
+                        [⚡] TRUST NEW SERVER KEY & PIN IDENTITY
+                      </Button>
+                    </div>
+                  </Show>
                 </div>
               )}
             </Show>

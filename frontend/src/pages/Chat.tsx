@@ -64,12 +64,10 @@ export default function Chat(): JSX.Element {
       const bundle = await api.encryption.getPublicIdentity(peer.user_id);
       const pinned = await cryptoService.getPeerPinnedIdentity(peer.user_id);
       if (pinned && pinned.identity_key) {
-        if (
-          pinned.identity_key !== bundle.identity_key ||
-          (pinned.identity_key_ed25519 &&
-            bundle.identity_key_ed25519 &&
-            pinned.identity_key_ed25519 !== bundle.identity_key_ed25519)
-        ) {
+        const { normalizeKey } = await import("../crypto/key-store");
+        const normPinned = normalizeKey(pinned.identity_key);
+        const normBundle = normalizeKey(bundle.identity_key);
+        if (normPinned !== normBundle && pinned.is_verified) {
           showToast(
             "error",
             "CRITICAL MITM DETECTED",
@@ -229,18 +227,42 @@ export default function Chat(): JSX.Element {
               <>
                 <ChatHeader room={activeRoom()} />
                 <Show when={securityAlert()}>
-                  <div class="font-pixel z-20 flex items-center justify-between border-2 border-red-500 bg-red-950/95 p-3 text-[8px] text-red-200 shadow-[0_0_15px_rgba(239,68,68,0.5)]">
+                  <div class="font-pixel z-20 flex flex-wrap items-center justify-between gap-2 border-2 border-red-500 bg-red-950/95 p-3 text-[8px] text-red-200 shadow-[0_0_15px_rgba(239,68,68,0.5)]">
                     <div class="flex items-center gap-2">
                       <span class="inline-block h-2.5 w-2.5 flex-shrink-0 animate-ping bg-red-500" />
                       <span>[!] {securityAlert()}</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => openModal("safety-number")}
-                      class="flex-shrink-0 cursor-pointer border border-red-400 bg-red-900 px-2.5 py-1 text-[8px] font-bold text-white uppercase shadow-[1px_1px_0_#000] hover:bg-red-800"
-                    >
-                      VERIFY MITM
-                    </button>
+                    <div class="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const peer = activeRoom()?.participants.find((p: Participant) => p.user_id !== userId());
+                          if (!peer) return;
+                          try {
+                            const bundle = await api.encryption.getPublicIdentity(peer.user_id);
+                            await cryptoService.trustNewPeerIdentityKey(
+                              peer.user_id,
+                              bundle.identity_key,
+                              bundle.identity_key_ed25519
+                            );
+                            setSecurityAlert(null);
+                            showToast("success", "IDENTITY TRUSTED", "SESSION RESET & READY TO CHAT");
+                          } catch {
+                            showToast("error", "ERROR", "FAILED TO TRUST NEW KEY");
+                          }
+                        }}
+                        class="flex-shrink-0 cursor-pointer border border-green-400 bg-green-900 px-2.5 py-1 text-[8px] font-bold text-white uppercase shadow-[1px_1px_0_#000] hover:bg-green-800"
+                      >
+                        [⚡ TRUST KEY]
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openModal("safety-number")}
+                        class="flex-shrink-0 cursor-pointer border border-red-400 bg-red-900 px-2.5 py-1 text-[8px] font-bold text-white uppercase shadow-[1px_1px_0_#000] hover:bg-red-800"
+                      >
+                        VERIFY MITM
+                      </button>
+                    </div>
                   </div>
                 </Show>
                 <MessageList roomId={roomId} class="flex-1 min-h-0" />

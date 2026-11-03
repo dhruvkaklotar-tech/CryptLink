@@ -226,12 +226,13 @@ class CryptoService {
     let oneTimePreKey: OneTimePreKey | null = null;
     if (oneTimePreKeyPublic !== null) {
       oneTimePreKey = await getOneTimePreKeyByPublicKey(oneTimePreKeyPublic);
-      console.log("[DEBUG X3DH RECEIVER]", { oneTimePreKeyPublic, found: !!oneTimePreKey });
       if (oneTimePreKey !== null) {
         await markOneTimePreKeyUsed(oneTimePreKey.id);
+      } else {
+        console.warn(
+          "[CryptLink X3DH Receiver] OTP key requested in header was not found locally. Proceeding with 3-DH fallback."
+        );
       }
-    } else {
-      console.log("[DEBUG X3DH RECEIVER] oneTimePreKeyPublic is null");
     }
 
     const sharedKey = await receiveX3DH(
@@ -340,6 +341,25 @@ class CryptoService {
       header: ratchetHeader,
     };
 
+    // Auto-recovery: If we have an existing state, but the message arrives with an inaugural X3DH header:
+    // Try decrypting with existing state first. If it throws, auto-recover by resetting the stale session
+    // and processing the new X3DH handshake header!
+    if (state !== null && x3dhHeader) {
+      try {
+        const plaintextBytes = await decryptMessage(state, encryptedMessage);
+        const serialized = await serializeRatchetState(state);
+        await saveRatchetState(serialized);
+        return new TextDecoder().decode(plaintextBytes);
+      } catch (err) {
+        console.warn(
+          "[CryptLink Crypto] Decryption with existing ratchet state failed; auto-recovering from incoming X3DH header...",
+          err
+        );
+        await this.endSession(peerId);
+        state = null;
+      }
+    }
+
     if (state === null) {
       if (!x3dhHeader) {
         throw new Error("Cannot establish session: missing X3DH header");
@@ -433,6 +453,7 @@ class CryptoService {
     newEdKey: string
   ): Promise<void> {
     await trustNewPeerIdentity(peerId, newKey, newEdKey);
+    await this.endSession(peerId);
   }
 
   async getMyFingerprint(): Promise<string | null> {

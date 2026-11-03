@@ -257,6 +257,11 @@ export async function getOneTimePreKey(id: string): Promise<OneTimePreKey | null
   };
 }
 
+export function normalizeKey(key: string): string {
+  if (!key) return "";
+  return key.replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_").trim();
+}
+
 export async function getOneTimePreKeyByPublicKey(
   publicKey: string
 ): Promise<OneTimePreKey | null> {
@@ -269,7 +274,8 @@ export async function getOneTimePreKeyByPublicKey(
 
     request.onsuccess = () => {
       const results = request.result as StoredOneTimePreKey[];
-      const match = results.find((r) => r.public_key === publicKey);
+      const normTarget = normalizeKey(publicKey);
+      const match = results.find((r) => normalizeKey(r.public_key) === normTarget);
 
       if (!match) {
         resolve(null);
@@ -431,16 +437,16 @@ export async function pinOrVerifyPeerIdentity(
   }
 
   // Check if X25519 key matches
-  const x25519Matches = existing.identity_key === identityKey;
+  const x25519Matches = normalizeKey(existing.identity_key) === normalizeKey(identityKey);
 
   // Check if Ed25519 key matches (if provided)
   let ed25519Matches = true;
   if (identityKeyEd25519 && existing.identity_key_ed25519) {
-    if (existing.identity_key_ed25519 !== identityKeyEd25519) {
+    if (normalizeKey(existing.identity_key_ed25519) !== normalizeKey(identityKeyEd25519)) {
       // If previously stored Ed25519 was mistakenly set to the X25519 key, heal it
       if (
-        existing.identity_key_ed25519 === existing.identity_key &&
-        identityKeyEd25519 !== identityKey
+        normalizeKey(existing.identity_key_ed25519) === normalizeKey(existing.identity_key) &&
+        normalizeKey(identityKeyEd25519) !== normalizeKey(identityKey)
       ) {
         existing.identity_key_ed25519 = identityKeyEd25519;
       } else {
@@ -462,7 +468,23 @@ export async function pinOrVerifyPeerIdentity(
     return { status: currentStatus, isNew: false };
   }
 
-  // CRITICAL: IDENTITY KEY MISMATCH DETECTED (POTENTIAL MITM SUBSTITUTION ATTACK)
+  // If the contact was never manually verified via SAS (TOFU unverified),
+  // rotate to the new identity key smoothly so messaging does not break permanently.
+  if (!existing.is_verified) {
+    console.warn(`[CryptLink Sentinel] TOFU key update for unverified peer ${peerId}`);
+    existing.identity_key = identityKey;
+    if (identityKeyEd25519) {
+      existing.identity_key_ed25519 = identityKeyEd25519;
+    }
+    existing.pinned_at = now;
+    existing.status = "trusted";
+    await performTransaction(STORES.PINNED_IDENTITIES, "readwrite", (store) =>
+      store.put(existing)
+    );
+    return { status: "trusted", isNew: false };
+  }
+
+  // CRITICAL: IDENTITY KEY MISMATCH DETECTED ON A VERIFIED CONTACT (POTENTIAL MITM SUBSTITUTION ATTACK)
   existing.status = "compromised";
   await performTransaction(STORES.PINNED_IDENTITIES, "readwrite", (store) =>
     store.put(existing)
@@ -499,11 +521,12 @@ export async function trustNewPeerIdentity(
   newEd25519Key: string
 ): Promise<void> {
   const now = new Date().toISOString();
+  const existing = await getPinnedIdentity(peerId);
   const record: PinnedIdentity = {
     peer_id: peerId,
     identity_key: newIdentityKey,
     identity_key_ed25519: newEd25519Key,
-    first_seen: now,
+    first_seen: existing?.first_seen ?? now,
     pinned_at: now,
     is_verified: true,
     status: "verified",
